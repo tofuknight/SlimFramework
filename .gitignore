@@ -1,0 +1,30 @@
+# Godot 4+
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Mono / C#
+.mono/
+data_*/
+**/bin/
+**/obj/
+*.csproj.user
+*.sln.docstates
+
+# Builds
+builds/
+*.pck
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user

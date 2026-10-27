@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <!-- 与 back-night 的包对齐；GodotSharp 跟本仓库 Godot 4.7 编辑器。 -->
+    <GodotSharpVersion>4.7.2</GodotSharpVersion>
+    <GoogleProtobufVersion>3.34.1</GoogleProtobufVersion>
+    <GrpcToolsVersion>2.80.0</GrpcToolsVersion>
+  </PropertyGroup>
+</Project>

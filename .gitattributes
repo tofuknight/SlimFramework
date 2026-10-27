@@ -1,13 +1,25 @@
 * text=auto eol=lf
-*.cs text eol=lf
-*.gd text eol=lf
-*.tscn text eol=lf
-*.godot text eol=lf
-*.csproj text eol=lf
-*.sln text eol=lf
-*.import text eol=lf
-*.svg text eol=lf
+
+*.cs text diff=csharp
+*.proto text
+*.md text
+*.json text
+*.csproj text
+*.sln text
+
 *.png binary
 *.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.svg binary
 *.wav binary
 *.ogg binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.bytes binary
+*.import binary

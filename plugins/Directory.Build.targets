@@ -1,0 +1,11 @@
+<Project>
+  <!-- 插件不得引用 Demo / 游戏工程。插件只引用 SlimFramework（以及可选的 Godot 适配）。 -->
+  <Target Name="GuardPluginDoesNotReferenceGame" BeforeTargets="AssignProjectConfiguration">
+    <ItemGroup>
+      <_GameRef Include="@(ProjectReference)"
+                Condition="$([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('sample')) Or $([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('demogame'))" />
+    </ItemGroup>
+    <Error Condition="'@(_GameRef)' != ''"
+           Text="依赖方向错误：$(MSBuildProjectName) 不能引用 @(_GameRef)。Plugins 不得依赖 Demo 或 Game。" />
+  </Target>
+</Project>

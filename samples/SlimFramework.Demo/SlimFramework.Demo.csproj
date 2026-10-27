@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.Demo</RootNamespace>
+    <AssemblyName>SlimFramework.Demo</AssemblyName>
+    <Description>示例游戏程序集。只引用框架，可在无 Godot 进程里跑通。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework\SlimFramework.csproj" />
+    <ProjectReference Include="..\..\src\SlimFramework.Contracts\SlimFramework.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
+    <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos/**/*.proto" GrpcServices="None" />
+    <EmbeddedResource Include="Fixtures/tbitem.bytes" LogicalName="SlimFramework.Demo.Fixtures.tbitem.bytes" />
+  </ItemGroup>
+  <Target Name="GuardDemoHasNoGodot" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_GodotRef Include="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('SlimFramework.Godot'))" />
+    </ItemGroup>
+    <Error Condition="'@(_GodotRef)' != '' or '%(PackageReference.Identity)' == 'GodotSharp'"
+           Text="Demo 程序集不能引用 Godot。Godot 入口在 samples/DemoGame。" />
+  </Target>
+</Project>

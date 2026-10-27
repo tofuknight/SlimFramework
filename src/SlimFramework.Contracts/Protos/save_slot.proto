@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package slim.save.v1;
+
+option csharp_namespace = "SlimFramework.Contracts.Save.V1";
+
+// 进度槽位信封。各模块把自己的 protobuf（或任意）字节放进 sections。
+// 框架只认识本 message，不认识玩法字段。新字段必须使用新的 field number。
+message SaveSlot {
+  int32 format_version = 1;
+  string display_name = 2;
+  map<string, bytes> sections = 3;
+}

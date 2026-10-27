@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework</RootNamespace>
+    <AssemblyName>SlimFramework</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>框架核心。不引用 Godot，不引用游戏代码。Luban 运行时在 External/Luban。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SlimFramework.Contracts\SlimFramework.Contracts.csproj" />
+  </ItemGroup>
+  <Target Name="GuardCoreHasNoGodot" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'%(PackageReference.Identity)' == 'GodotSharp'"
+           Text="SlimFramework 核心不能引用 GodotSharp。引擎代码放在 SlimFramework.Godot。" />
+  </Target>
+</Project>

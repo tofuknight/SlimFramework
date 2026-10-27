@@ -1,0 +1,11 @@
+<Project>
+  <!-- 框架程序集不得引用 Demo / 游戏工程。 -->
+  <Target Name="GuardFrameworkDoesNotReferenceGame" BeforeTargets="AssignProjectConfiguration">
+    <ItemGroup>
+      <_GameRef Include="@(ProjectReference)"
+                Condition="$([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('sample')) Or $([System.String]::Copy('%(Identity)').ToLowerInvariant().Contains('demogame'))" />
+    </ItemGroup>
+    <Error Condition="'@(_GameRef)' != ''"
+           Text="依赖方向错误：$(MSBuildProjectName) 不能引用 @(_GameRef)。Framework 不得依赖 Demo 或 Game。" />
+  </Target>
+</Project>

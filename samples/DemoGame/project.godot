@@ -1,0 +1,12 @@
+; Godot 4.7 示例。打开本目录的 project.godot，不要把仓库根目录当游戏工程。
+config_version=5
+
+[application]
+
+config/name="SlimFramework Demo"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[dotnet]
+
+project/assembly_name="SlimFramework.DemoGame"

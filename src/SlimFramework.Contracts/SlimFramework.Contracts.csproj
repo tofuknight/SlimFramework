@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.Contracts</RootNamespace>
+    <AssemblyName>SlimFramework.Contracts</AssemblyName>
+    <Description>共享 Protobuf 契约。不含玩法，不含 Godot。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
+    <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Protobuf Include="Protos/**/*.proto" GrpcServices="None" />
+  </ItemGroup>
+  <Target Name="GuardContractsHaveNoGodot" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'%(PackageReference.Identity)' == 'GodotSharp'"
+           Text="SlimFramework.Contracts 不能引用 GodotSharp。" />
+  </Target>
+</Project>

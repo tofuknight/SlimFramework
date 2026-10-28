@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    Godot.NET.Sdk 会在本文件之后、csproj 之前，给空的 GodotTargetPlatform 填上当前操作系统。
+    编辑器构建则更早通过 -p:GodotTargetPlatform= 传入。这里把「调用方有没有传入」记下来，
+    供 SlimFramework.DemoGame.csproj 选择隐式 SDK 引用还是仓库里的 GodotSharp 包。
+    本目录的 Directory.Build.props 会挡住仓库根那份，所以先把它引进来。
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+  <PropertyGroup>
+    <SlimDemoGameEditorBuild Condition="'$(SlimDemoGameEditorBuild)' == '' and '$(GodotTargetPlatform)' != ''">true</SlimDemoGameEditorBuild>
+  </PropertyGroup>
+</Project>

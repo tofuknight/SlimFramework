@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package slim.resource.v1;
+
+option csharp_namespace = "SlimFramework.Contracts.Resource.V1";
+
+// 稳定 ref_key → 资源路径。key 的分配策略由游戏或工具决定，框架只负责装载。
+message ResourceRef {
+  int32 ref_key = 1;
+  string constant = 2;
+  string uid = 3;
+  string path = 4;
+}
+
+// map 的 key 必须与 ResourceRef.ref_key 一致。
+message ResourceRefCatalog {
+  map<int32, ResourceRef> refs = 1;
+}

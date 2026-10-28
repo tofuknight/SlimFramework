@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.GodotAdapter</RootNamespace>
+    <AssemblyName>SlimFramework.Godot</AssemblyName>
+    <Description>Godot 适配。只引用 SlimFramework，不引用游戏。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SlimFramework\SlimFramework.csproj" />
+  </ItemGroup>
+</Project>

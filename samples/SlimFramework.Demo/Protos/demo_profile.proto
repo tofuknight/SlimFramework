@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package slim.demo.v1;
+
+option csharp_namespace = "SlimFramework.Demo.V1";
+
+// 玩法存档段。只编译进 Demo，框架程序集看不到这个 message。
+message DemoProfile {
+  string player_name = 1;
+  int32 coins = 2;
+}

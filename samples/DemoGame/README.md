@@ -42,3 +42,5 @@ dotnet build SlimFramework.DemoGame.csproj -p:SlimDemoGameEditorBuild=false
 - 槽位 0 经 `SaveService` 往返，并由另一个 `GodotUserSaveStore` 从 `user://` 读到字节
 
 `dotnet build` 只能证明这些类型编得过。适配器有没有跑，要看 Godot 里这两行输出：`SlimFramework Godot adapter smoke OK`，然后 `SlimFramework DemoSession OK`。无头证明仍是 `dotnet run --project samples/SlimFramework.Demo.Runner`，它不进 Godot。
+
+`SlimBootstrap` 和 `UiPage` 由 `src/SlimFramework.Godot/build/SlimFramework.Godot.targets` 拷到本目录的 `SlimFramework.Scripts/`（不入库）再编译。不要把这两个类型改回适配程序集，否则编辑器 Play 会报 `ScriptTypeBiMap` 重复键。

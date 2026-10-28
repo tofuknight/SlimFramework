@@ -50,7 +50,7 @@ Modules are main-thread. There is no lock.
 - `ResourceCatalog`, `IAssetLoader`
 - `TableFiles` — adapts a byte reader to Luban `Func<string, ByteBuf>`
 - `IAudio`, `AudioPreferences`, `IUiStack`, `UiLayer`, `AudioBus`
-- Godot: `SlimBootstrap`, `GodotAssetLoader`, `GodotAudio`, `GodotUiStack`, `UiPage`, `NodeSingleton<T>`, `GodotUserSaveStore`, `GodotUserTextStore`, `GodotTableFiles`, `GodotPauseSink`
+- Godot: `SlimBootstrap`, `GodotAssetLoader`, `GodotAudio`, `GodotUiStack`, `IUiPage`, `UiPage`, `NodeSingleton<T>`, `GodotUserSaveStore`, `GodotUserTextStore`, `GodotTableFiles`, `GodotPauseSink`
 
 ## Not in this tree on purpose
 
@@ -60,6 +60,8 @@ Modules are main-thread. There is no lock.
 - Game tables or game protos inside the core assembly
 
 ## Threading and Godot
+
+`SlimBootstrap` and `UiPage` are Godot script classes. They stay in `src/SlimFramework.Godot` but are not compiled into that assembly. A game imports `build/SlimFramework.Godot.targets`, which copies them under the game project and compiles them there, so each type has one `res://` path. Compiling them into the referenced assembly makes the editor register the same type twice on Play.
 
 `SlimBootstrap` adds audio and UI as children of itself during `Init`, which runs from `_Ready`, so those nodes are in the tree before `OnAppReady`. After `Init` it calls `AudioPreferences.Apply`, which copies `audio.music` / `audio.sfx` / `audio.ui` from `PreferenceStore` onto `IAudio` when those keys exist. Pause is `FlowMachine` → `GodotPauseSink` → `SceneTree.Paused`. The UI canvas uses `ProcessMode.Always`.
 

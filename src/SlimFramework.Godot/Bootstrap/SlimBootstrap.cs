@@ -1,10 +1,14 @@
 using Godot;
+using SlimFramework.Audio;
+using SlimFramework.Flow;
+using SlimFramework.Persistence;
 
 namespace SlimFramework.GodotAdapter;
 
 /// <summary>
 /// 挂到主场景或 Autoload 的入口。子类在 <see cref="Configure"/> 里 Use 游戏插件。
 /// 帧更新由本节点 <c>_Process</c> 转发，不再单独挂驱动节点。
+/// 这个文件不进适配程序集，而由游戏工程编译，这样 Godot 只会按一条 <c>res://</c> 路径登记它。
 /// </summary>
 public partial class SlimBootstrap : Node
 {

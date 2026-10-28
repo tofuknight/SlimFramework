@@ -44,7 +44,7 @@ public sealed class GodotUiStack : IUiStack
     {
         foreach (var entry in _stack.ToArray())
         {
-            if (entry.Root is UiPage page && GodotObject.IsInstanceValid(entry.Root))
+            if (entry.Root is IUiPage page && GodotObject.IsInstanceValid(entry.Root))
                 page.OnClose();
             Destroy(entry);
         }
@@ -91,7 +91,7 @@ public sealed class GodotUiStack : IUiStack
         }
 
         _stack.Add(entry);
-        if (entry.Root is UiPage page)
+        if (entry.Root is IUiPage page)
             page.OnOpen();
         Restack();
         return entry.Root;
@@ -108,7 +108,7 @@ public sealed class GodotUiStack : IUiStack
     private void Close(PageEntry entry)
     {
         _stack.Remove(entry);
-        if (entry.Root is UiPage page)
+        if (entry.Root is IUiPage page)
             page.OnClose();
 
         if (entry.Cache && !_cache.ContainsKey(entry.Path))

@@ -39,6 +39,7 @@
   <ItemGroup Condition="'$(SlimDemoGameEditorBuild)' != 'true'">
     <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
   </ItemGroup>
+  <Import Project="..\..\src\SlimFramework.Godot\build\SlimFramework.Godot.targets" />
   <ItemGroup>
     <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
     <ProjectReference Include="..\SlimFramework.Demo\SlimFramework.Demo.csproj" />

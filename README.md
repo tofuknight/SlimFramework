@@ -25,6 +25,8 @@ CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release`
 
 Luban CLI is pinned at `third_party/Luban` (4.12.0, not Luban 5). Generate with `tools/Luban/generate.sh`. Games do not pick their own CLI. Runtime stays `src/SlimFramework/External/Luban`.
 
+`SlimBootstrap` and `UiPage` are not compiled into `SlimFramework.Godot`. Games import `src/SlimFramework.Godot/build/SlimFramework.Godot.targets`, which copies those scripts into the game project and compiles them there. That is what gives each type one `res://` path. Putting them back in the adapter assembly makes the Godot editor register the same type twice on Play.
+
 License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NOTICES.md`.
 
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
@@ -86,6 +88,7 @@ git submodule add https://github.com/tofuknight/SlimFramework.git third_party/Sl
 ```
 
 ```xml
+<Import Project="third_party/SlimFramework/src/SlimFramework.Godot/build/SlimFramework.Godot.targets" />
 <ItemGroup>
   <ProjectReference Include="third_party/SlimFramework/src/SlimFramework.Godot/SlimFramework.Godot.csproj" />
   <Compile Remove="third_party/**" />
@@ -93,6 +96,8 @@ git submodule add https://github.com/tofuknight/SlimFramework.git third_party/Sl
 ```
 
 `Compile Remove` 是必须的：Godot.NET.Sdk 会编译工程目录下全部 `.cs`。子模块如果躺在游戏目录里，不排除就会和引用的程序集撞类型。子模块放在游戏目录外面时可以不写这条。
+
+`Import` 也是必须的。`SlimBootstrap` 和 `UiPage` 不编进适配程序集，而是在构建时拷到游戏工程的 `SlimFramework.Scripts/` 再编译。这样每个类型只有一条 `res://` 脚本路径。少了这次拷贝，编辑器 Play 会把同一个类登记两次。
 
 核心程序集 `SlimFramework.csproj` 只有在你不需要 Godot 适配时才单独引用（无头工具、编辑器外测试）。
 

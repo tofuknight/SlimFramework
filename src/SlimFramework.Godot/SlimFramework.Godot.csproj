@@ -8,6 +8,15 @@
   <ItemGroup>
     <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
   </ItemGroup>
+  <!--
+    Node / Control 子类如果编进这个程序集，就没有 res:// 脚本路径。
+    游戏脚本再继承它们时，编辑器 Play 会把同一类型登记两次。
+    源文件留在这里，改由 build/SlimFramework.Godot.targets 拷进游戏工程后编译。
+  -->
+  <ItemGroup>
+    <Compile Remove="Bootstrap/SlimBootstrap.cs" />
+    <Compile Remove="UI/UiPage.cs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SlimFramework\SlimFramework.csproj" />
   </ItemGroup>

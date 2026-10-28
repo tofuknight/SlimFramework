@@ -15,11 +15,25 @@ public sealed class SaveService : IModule
 
     private readonly ISaveStore _store;
     private readonly Dictionary<string, ISaveContributor> _contributors = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, ISaveMigrator> _migrators = new();
+    private int _formatVersion = DefaultFormatVersion;
 
     public SaveService(ISaveStore store)
     {
         ArgumentNullException.ThrowIfNull(store);
         _store = store;
+    }
+
+    /// <summary>当前信封版本。新存档写成这个值。低于它的旧档要有 <see cref="ISaveMigrator"/> 才能读。</summary>
+    public int FormatVersion
+    {
+        get => _formatVersion;
+        set
+        {
+            if (value < 1)
+                throw new ArgumentOutOfRangeException(nameof(value), value, "FormatVersion 必须 >= 1。");
+            _formatVersion = value;
+        }
     }
 
     public int MaxSlots { get; set; } = 100;
@@ -34,15 +48,30 @@ public sealed class SaveService : IModule
         _contributors[contributor.SectionId] = contributor;
     }
 
+    /// <summary>登记一步升级。同一个 <see cref="ISaveMigrator.FromVersion"/> 只能有一个。</summary>
+    public void RegisterMigrator(ISaveMigrator migrator)
+    {
+        ArgumentNullException.ThrowIfNull(migrator);
+        if (migrator.FromVersion < 1)
+            throw new ArgumentException("FromVersion 必须 >= 1。", nameof(migrator));
+        if (migrator.ToVersion <= migrator.FromVersion)
+            throw new ArgumentException("ToVersion 必须大于 FromVersion。", nameof(migrator));
+        if (_migrators.ContainsKey(migrator.FromVersion))
+            throw new InvalidOperationException($"format_version {migrator.FromVersion} 已有迁移器。");
+        _migrators.Add(migrator.FromVersion, migrator);
+    }
+
     /// <summary>
     /// 覆盖槽位。该槽已有、且当前没有注册 contributor 的 section 原样写回。
+    /// 旧版本会先走迁移器，再把无人认领的段留下。
     /// </summary>
     public void Save(int slot, string displayName)
     {
         Validate(slot);
+        var version = FormatVersion;
         var message = new SaveSlot
         {
-            FormatVersion = DefaultFormatVersion,
+            FormatVersion = version,
             DisplayName = displayName ?? "",
         };
 
@@ -136,14 +165,41 @@ public sealed class SaveService : IModule
     {
     }
 
-    private static SaveSlot ParseSupported(byte[] payload)
+    private SaveSlot ParseSupported(byte[] payload)
     {
         var message = SaveSlot.Parser.ParseFrom(payload);
         if (message.FormatVersion <= 0)
             throw new InvalidDataException("存档 format_version 非法。");
-        if (message.FormatVersion > DefaultFormatVersion)
+        if (message.FormatVersion > FormatVersion)
             throw new InvalidDataException(
-                $"存档 format_version {message.FormatVersion} 高于当前 {DefaultFormatVersion}，尚无迁移器。");
+                $"存档 format_version {message.FormatVersion} 高于当前 {FormatVersion}。");
+        if (message.FormatVersion < FormatVersion)
+            message = Migrate(message);
+        return message;
+    }
+
+    private SaveSlot Migrate(SaveSlot message)
+    {
+        for (var step = 0; message.FormatVersion < FormatVersion; step++)
+        {
+            if (step >= 32)
+                throw new InvalidDataException("存档迁移步数过多。");
+            if (!_migrators.TryGetValue(message.FormatVersion, out var migrator))
+                throw new InvalidDataException(
+                    $"存档 format_version {message.FormatVersion} 低于当前 {FormatVersion}，缺少迁移器。");
+
+            var next = migrator.Migrate(message);
+            if (next == null)
+                throw new InvalidDataException("迁移器返回了空信封。");
+            if (next.FormatVersion != migrator.ToVersion)
+                throw new InvalidDataException(
+                    $"迁移器 {migrator.FromVersion}->{migrator.ToVersion} 写回的 format_version 是 {next.FormatVersion}。");
+            if (next.FormatVersion > FormatVersion)
+                throw new InvalidDataException(
+                    $"迁移器把 format_version 升到 {next.FormatVersion}，高于当前 {FormatVersion}。");
+            message = next;
+        }
+
         return message;
     }
 

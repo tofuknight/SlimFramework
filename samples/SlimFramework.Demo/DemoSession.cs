@@ -2,11 +2,13 @@ using System.Globalization;
 using Google.Protobuf;
 using Luban;
 using SlimFramework;
+using SlimFramework.Audio;
 using SlimFramework.Config;
 using SlimFramework.Contracts.Resource.V1;
 using SlimFramework.Contracts.Save.V1;
 using SlimFramework.Flow;
 using SlimFramework.Persistence;
+using SlimFramework.Demo.V1;
 using SlimFramework.Resources;
 using cfg;
 
@@ -115,6 +117,8 @@ public static class DemoSession
         if (plugin.State.Coins != 4)
             throw new InvalidOperationException("删除槽位不应改写玩法状态。");
 
+        RunAudioPreferenceCheck();
+
         var prefs = app.Get<PreferenceStore>();
         prefs.SetFloat("music", 0.25f);
         prefs.Flush();
@@ -162,6 +166,8 @@ public static class DemoSession
         if (loader.Load<string>(entry) != "uid://potion" || loader.Load<string>(catalog, 8) != "res://path-only.svg")
             throw new InvalidOperationException("按资源引用加载没有走 LoadKey。");
 
+        RunMigrationRegression(saves);
+
         var mounted = SlimApp.Current;
         app.Shutdown();
         if (!ReferenceEquals(SlimApp.Current, mounted))
@@ -169,6 +175,100 @@ public static class DemoSession
 
         Console.WriteLine("SlimFramework demo OK");
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"item={potion.Name} coins={plugin.State.Coins} ref={entry.Uid}"));
+    }
+
+    private static void RunAudioPreferenceCheck()
+    {
+        var audio = new VolumeAudio();
+        var app = new SlimApp();
+        var prefs = new PreferenceStore(new MemoryTextStore());
+        app.Add(prefs);
+        app.Add(audio);
+        app.Init();
+
+        AudioPreferences.Apply(app);
+        if (Math.Abs(audio.GetVolume(AudioBus.Ui) - 1f) > 0.0001f)
+            throw new InvalidOperationException("缺键时不应改音量。");
+
+        prefs.SetFloat(AudioPreferences.MusicKey, 0.2f);
+        prefs.SetFloat(AudioPreferences.SfxKey, 0.4f);
+        prefs.SetFloat(AudioPreferences.UiKey, 0.8f);
+        AudioPreferences.Apply(app);
+        if (Math.Abs(audio.GetVolume(AudioBus.Music) - 0.2f) > 0.0001f
+            || Math.Abs(audio.GetVolume(AudioBus.Sfx) - 0.4f) > 0.0001f
+            || Math.Abs(audio.GetVolume(AudioBus.Ui) - 0.8f) > 0.0001f)
+            throw new InvalidOperationException("音量偏好没有套到 IAudio。");
+
+        audio.PlayUi("res://ui.wav");
+        audio.PlaySfx("res://sfx.wav");
+        if (audio.UiPlays != 1 || audio.SfxPlays != 1)
+            throw new InvalidOperationException("PlayUi 与 PlaySfx 应分开计数。");
+        app.Shutdown();
+    }
+
+    private static void RunMigrationRegression(MemorySaveStore saves)
+    {
+        var legacy = new SaveSlot
+        {
+            FormatVersion = 1,
+            DisplayName = "legacy",
+        };
+        legacy.Sections[ProfileContributor.Id] = ByteString.CopyFrom(new DemoProfile
+        {
+            PlayerName = "old",
+            Coins = 9,
+        }.ToByteArray());
+        saves.Write(8, legacy.ToByteArray());
+
+        var blockedState = new ProfileState { PlayerName = "stay", Coins = 3 };
+        var blocked = new SaveService(saves) { FormatVersion = 2 };
+        blocked.Register(new ProfileContributor(blockedState));
+        ExpectUnsupported(() => blocked.TryPeek(8, out _));
+        ExpectUnsupported(() => blocked.TryLoad(8));
+        ExpectUnsupported(() => blocked.Save(8, "nope"));
+        if (blockedState.Coins != 3 || blockedState.PlayerName != "stay")
+            throw new InvalidOperationException("缺少迁移器时不应 Restore。");
+        if (!SameLegacy(saves))
+            throw new InvalidOperationException("缺少迁移器时不应改写旧档。");
+
+        var loaded = new ProfileState();
+        var migrating = new SaveService(saves) { FormatVersion = 2 };
+        migrating.Register(new ProfileContributor(loaded));
+        migrating.RegisterMigrator(new DemoFormatMigrator());
+        if (!migrating.TryPeek(8, out var peeked)
+            || peeked.DisplayName != "legacy"
+            || !peeked.SectionIds.Contains(ProfileContributor.Id)
+            || !peeked.SectionIds.Contains(DemoFormatMigrator.MarkerSection))
+            throw new InvalidOperationException("Peek 应看到迁移后的段，且不改玩法。");
+        if (loaded.Coins != 0 || loaded.PlayerName != "")
+            throw new InvalidOperationException("Peek 不应 Restore。");
+        if (!SameLegacy(saves))
+            throw new InvalidOperationException("Peek 不应改写槽位文件。");
+        if (!migrating.TryLoad(8) || loaded.Coins != 9 || loaded.PlayerName != "old" || migrating.CurrentDisplayName != "legacy")
+            throw new InvalidOperationException("迁移后应读回旧段。");
+        if (!SameLegacy(saves))
+            throw new InvalidOperationException("加载迁移不应改写槽位文件。");
+
+        migrating.Save(8, "legacy");
+        if (!saves.TryRead(8, out var upgraded))
+            throw new InvalidOperationException("迁移后保存失败。");
+        var written = SaveSlot.Parser.ParseFrom(upgraded);
+        if (written.FormatVersion != 2 || written.DisplayName != "legacy")
+            throw new InvalidOperationException("保存应写回当前 format_version。");
+        if (!written.Sections.TryGetValue(DemoFormatMigrator.MarkerSection, out var marker) || marker.ToStringUtf8() != "1to2")
+            throw new InvalidOperationException("迁移标记段没有写回。");
+        if (!written.Sections.ContainsKey(ProfileContributor.Id))
+            throw new InvalidOperationException("迁移后玩法段丢失。");
+    }
+
+    private static bool SameLegacy(MemorySaveStore saves)
+    {
+        if (!saves.TryRead(8, out var raw))
+            return false;
+        var message = SaveSlot.Parser.ParseFrom(raw);
+        return message.FormatVersion == 1
+            && message.DisplayName == "legacy"
+            && !message.Sections.ContainsKey(DemoFormatMigrator.MarkerSection);
     }
 
     private static void ExpectUnsupported(Action action)
@@ -210,6 +310,65 @@ public static class DemoSession
         buf.WriteString(name);
         buf.WriteString(desc);
         buf.WriteInt(count);
+    }
+
+    private sealed class VolumeAudio : IAudio
+    {
+        public float Music { get; private set; } = 1f;
+
+        public float Sfx { get; private set; } = 1f;
+
+        public float Ui { get; private set; } = 1f;
+
+        public int UiPlays { get; private set; }
+
+        public int SfxPlays { get; private set; }
+
+        public void SetVolume(AudioBus bus, float linear01)
+        {
+            switch (bus)
+            {
+                case AudioBus.Music:
+                    Music = linear01;
+                    break;
+                case AudioBus.Sfx:
+                    Sfx = linear01;
+                    break;
+                case AudioBus.Ui:
+                    Ui = linear01;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(bus), bus, null);
+            }
+        }
+
+        public float GetVolume(AudioBus bus) => bus switch
+        {
+            AudioBus.Music => Music,
+            AudioBus.Sfx => Sfx,
+            AudioBus.Ui => Ui,
+            _ => throw new ArgumentOutOfRangeException(nameof(bus), bus, null),
+        };
+
+        public void PlayMusic(string path)
+        {
+        }
+
+        public void StopMusic()
+        {
+        }
+
+        public void PlaySfx(string path) => SfxPlays++;
+
+        public void PlayUi(string path) => UiPlays++;
+
+        public void Init(SlimApp app)
+        {
+        }
+
+        public void Shutdown()
+        {
+        }
     }
 
     private sealed class RecordingLoader : IAssetLoader

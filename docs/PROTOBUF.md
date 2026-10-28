@@ -19,7 +19,21 @@
 
 ## 存档怎么接
 
-`SaveService.Save` 让每个 `ISaveContributor` 交一段字节，写进 `SaveSlot.sections`，再交给 `ISaveStore`。该槽里已有、但当前没有注册 contributor 的 section 会原样写回。`format_version` 小于 1，或高于 `SaveService.DefaultFormatVersion`，在有迁移器之前会拒绝，已有文件不会被覆盖。`TryPeek` 只读显示名和 section id，不调用 `Restore`。`TryDeleteSlot` 和 `EnumerateOccupiedSlots` 只动存储，不改玩法状态。
+`SaveService.Save` 让每个 `ISaveContributor` 交一段字节，写进 `SaveSlot.sections`，再交给 `ISaveStore`。该槽里已有、但当前没有注册 contributor 的 section 会原样写回。`TryPeek` 只读显示名和 section id，不调用 `Restore`。`TryDeleteSlot` 和 `EnumerateOccupiedSlots` 只动存储，不改玩法状态。
+
+`format_version` 小于 1，或高于 `SaveService.FormatVersion`（默认 `DefaultFormatVersion`，也就是 1），会拒绝。拒绝时已有文件不会被覆盖，也不会调用 `Restore`。
+
+低于当前版本时，必须有一条从该版本出发的 `ISaveMigrator`，一步一步升到 `FormatVersion`，然后才 `Restore`。缺任何一步都拒绝，不会把旧信封当成现在的格式。迁移只发生在内存里：`TryLoad` 和 `TryPeek` 不回写文件。下一次 `Save` 才把当前 `FormatVersion` 写回去，并保留迁移后仍然没有 contributor 的 section。高于当前版本的档不能往下降。
+
+```csharp
+var save = app.Get<SaveService>();
+save.FormatVersion = 2;
+save.RegisterMigrator(new V1ToV2());
+```
+
+`ISaveMigrator.FromVersion` 是这一步读的版本，`ToVersion` 必须更大，而且 `Migrate` 返回的 `format_version` 必须等于 `ToVersion`。同一个 `FromVersion` 只能登记一个。
+
+Demo 的回归在 `DemoSession`：目标版本设为 2 时，没有迁移器的 v1 槽会被拒绝，文件和玩法状态都不变。注册 `DemoFormatMigrator` 之后能读回玩法段；再保存时写成 version 2，并留下迁移器补上的标记段。`TryPeek` 能看到这个标记段，但不会 `Restore`，也不会改文件。
 
 ```csharp
 public sealed class ProfileContributor : ISaveContributor

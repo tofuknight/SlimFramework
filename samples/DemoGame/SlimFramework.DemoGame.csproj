@@ -1,0 +1,51 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!--
+    用 Godot 4.7.2 .NET 编辑器打开本目录的 project.godot，不要把仓库根当游戏工程。
+    文件名必须是 SlimFramework.DemoGame.csproj（project.godot 的 dotnet/project/assembly_name）。
+    同目录的 SlimFramework.DemoGame.sln 让编辑器认到这份工程；缺了它，编辑器会另存 csproj 并冲掉 Sdk。
+
+    Sdk 固定为 Godot.NET.Sdk/4.7.2。编辑器发现不是这个字符串就会改写本文件。
+    不要改回 Microsoft.NET.Sdk，也不要无条件加 PackageReference GodotSharp：
+    编辑器构建时 SDK 会隐式引用 GodotSharp 4.7.2，再写一份会类型重复。
+
+    开关 SlimDemoGameEditorBuild（判定在 Directory.Build.props，赶在 SDK 自动填写平台之前）：
+      未设置 / false — 默认。dotnet build SlimFramework.sln 和 CI 不需要安装编辑器。
+        关掉 SDK 的隐式 GodotSharp / SourceGenerators，改用仓库 PackageReference
+        GodotSharp $(GodotSharpVersion)（根 Directory.Build.props，与编辑器同为 4.7.2）。
+        解决方案配置补上 Release（SDK 默认只有 Debug、ExportDebug、ExportRelease）。
+      true — Godot 4.7.2 构建会传入 -p:GodotTargetPlatform=<平台>，从而打开此开关。
+        使用 SDK 自带的 GodotSharp、Debug 下的 GodotSharpEditor，以及 SourceGenerators。
+    命令行模拟编辑器：dotnet build -p:GodotTargetPlatform=linuxbsd
+      （windows / macos 等同理），或 -p:SlimDemoGameEditorBuild=true。
+    强制无编辑器路径：-p:SlimDemoGameEditorBuild=false。
+
+    两种路径的输出都在 .godot/mono/temp/bin/。SDK 在 NuGet restore 之前就改了输出目录，
+    编辑器也从这里加载程序集；不要再改回 bin/，否则 restore 路径会和编译路径错开。
+    说明见 README.md。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.DemoGame</RootNamespace>
+    <AssemblyName>SlimFramework.DemoGame</AssemblyName>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DisableImplicitGodotSharpReferences Condition="'$(SlimDemoGameEditorBuild)' != 'true'">true</DisableImplicitGodotSharpReferences>
+    <DisableImplicitGodotGeneratorReferences Condition="'$(SlimDemoGameEditorBuild)' != 'true'">true</DisableImplicitGodotGeneratorReferences>
+    <Configurations Condition="'$(SlimDemoGameEditorBuild)' != 'true'">Debug;Release</Configurations>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SlimDemoGameEditorBuild)' != 'true'">
+    <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
+    <ProjectReference Include="..\SlimFramework.Demo\SlimFramework.Demo.csproj" />
+  </ItemGroup>
+  <Target Name="GuardDemoGameGodotSharpSwitch" BeforeTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <_GodotSharpRef Include="@(PackageReference)" Condition="'%(Identity)' == 'GodotSharp'" />
+    </ItemGroup>
+    <Error Condition="'@(_GodotSharpRef->Count())' != '1'"
+           Text="DemoGame 必须恰好引用一份 GodotSharp。无编辑器构建只保留 PackageReference；编辑器构建（SlimDemoGameEditorBuild=true）只保留 Godot.NET.Sdk/4.7.2 的隐式引用。两份同时在会类型重复。" />
+  </Target>
+</Project>

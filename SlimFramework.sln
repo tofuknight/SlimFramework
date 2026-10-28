@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimFramework.Demo", "sampl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimFramework.Demo.Runner", "samples\SlimFramework.Demo.Runner\SlimFramework.Demo.Runner.csproj", "{335D4005-3D7D-4E97-9A9D-3B7B9C7BA8E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoGame", "samples\DemoGame\DemoGame.csproj", "{334581E3-3DBC-4A85-85B9-857AF02DC1A7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoGame", "samples\DemoGame\SlimFramework.DemoGame.csproj", "{334581E3-3DBC-4A85-85B9-857AF02DC1A7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{8F65782B-7A0E-4340-81ED-0E2B32376759}"
 EndProject

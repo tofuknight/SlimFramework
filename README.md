@@ -21,6 +21,8 @@ Sample table + save round-trip: `samples/SlimFramework.Demo/DemoSession.cs`.
 
 Build: `dotnet build SlimFramework.sln`. Headless proof: `dotnet run --project samples/SlimFramework.Demo.Runner`.
 
+`samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
+
 # SlimFramework
 
 轻量 Godot 4 / C# 游戏框架。给独立游戏用：模块生命周期、事件、流程、存档信封、偏好、资源目录、Luban 表加载，以及一层薄的 Godot 适配。
@@ -30,7 +32,7 @@ Build: `dotnet build SlimFramework.sln`. Headless proof: `dotnet run --project s
 ## 环境
 
 - .NET SDK 8
-- 可选：Godot 4.7 .NET 编辑器（只在打开 `samples/DemoGame` 时需要）
+- 可选：Godot 4.7.2 .NET 编辑器（只在打开 `samples/DemoGame` 时需要）
 - `GodotSharp` 4.7.2、`Google.Protobuf` 3.34.1、`Grpc.Tools` 2.80.0（版本写在 `Directory.Build.props`）
 
 ## 构建
@@ -43,6 +45,8 @@ dotnet run --project tools/Slim.SaveTool -- unpack /tmp/slot.sav
 ```
 
 `dotnet build` 不需要安装 Godot。Runner 会加载一张 Luban bin 表、用 protobuf 做一次存档往返，并走一遍流程 / 偏好 / 资源目录。
+
+`samples/DemoGame` 同一份 csproj 同时给命令行和 Godot 4.7.2 编辑器用。Sdk 保持 `Godot.NET.Sdk/4.7.2`；无编辑器时引用仓库里的 GodotSharp 包，编辑器构建（传入 `GodotTargetPlatform`）改用 SDK 自带引用。打开方式和开关见 [samples/DemoGame/README.md](samples/DemoGame/README.md)。
 
 ## 目录
 

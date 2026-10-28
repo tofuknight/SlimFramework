@@ -93,7 +93,7 @@ public static class DemoSession
         saves.Write(3, future.ToByteArray());
         if (!save.SlotExists(3))
             throw new InvalidOperationException("高版本槽位应仍算占用。");
-        ExpectUnsupported(() => save.TryPeek(3, out _));
+        ExpectUnsupported(() => save.TryPeek(3, out var _));
         ExpectUnsupported(() => save.TryLoad(3));
         ExpectUnsupported(() => save.Save(3, "nope"));
         if (!saves.TryRead(3, out var futureBytes)

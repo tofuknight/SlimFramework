@@ -56,6 +56,20 @@ public sealed class PreferenceStore : IModule
     public string Get(string key, string fallback = "") =>
         _values.TryGetValue(key, out var value) ? value : fallback;
 
+    /// <summary>键不存在时返回 false。不会把缺键当成空字符串。</summary>
+    public bool TryGet(string key, out string value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        if (_values.TryGetValue(key, out var found))
+        {
+            value = found;
+            return true;
+        }
+
+        value = "";
+        return false;
+    }
+
     public void Set(string key, string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);

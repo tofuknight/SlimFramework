@@ -2,7 +2,7 @@ using Godot;
 
 namespace SlimFramework.GodotAdapter;
 
-/// <summary>Music / SFX / UI 三条总线。音效用小对象池，播完释放资源引用。</summary>
+/// <summary>Music / SFX / UI 三条总线。SFX 与 UI 共用短音效池，播完释放资源引用。</summary>
 public sealed class GodotAudio : IAudio
 {
     public const string BusMusic = "Music";
@@ -14,7 +14,7 @@ public sealed class GodotAudio : IAudio
     private readonly Node _parent;
     private readonly GodotAssetLoader _assets;
     private readonly Stack<AudioStreamPlayer> _pool = new();
-    private readonly List<AssetTicket<AudioStream>> _liveSfx = new();
+    private readonly List<AssetTicket<AudioStream>> _liveOneShots = new();
     private Node? _host;
     private AudioStreamPlayer? _music;
     private string? _musicPath;
@@ -45,9 +45,9 @@ public sealed class GodotAudio : IAudio
     {
         _shuttingDown = true;
         StopMusic();
-        foreach (var ticket in _liveSfx.ToArray())
+        foreach (var ticket in _liveOneShots.ToArray())
             ticket.Dispose();
-        _liveSfx.Clear();
+        _liveOneShots.Clear();
         _host?.QueueFree();
         _host = null;
         _music = null;
@@ -110,13 +110,17 @@ public sealed class GodotAudio : IAudio
         _musicPath = null;
     }
 
-    public void PlaySfx(string path)
+    public void PlaySfx(string path) => PlayOneShot(path, BusSfx);
+
+    public void PlayUi(string path) => PlayOneShot(path, BusUi);
+
+    private void PlayOneShot(string path, string bus)
     {
         EnsureHost();
         var ticket = _assets.LoadTicket<AudioStream>(path);
-        _liveSfx.Add(ticket);
+        _liveOneShots.Add(ticket);
         var player = Rent();
-        player.Bus = BusSfx;
+        player.Bus = bus;
         player.Stream = ticket.Asset;
         player.Finished += OnFinished;
         player.Play();
@@ -127,7 +131,7 @@ public sealed class GodotAudio : IAudio
             if (_shuttingDown || !GodotObject.IsInstanceValid(player))
                 return;
             player.Finished -= OnFinished;
-            _liveSfx.Remove(ticket);
+            _liveOneShots.Remove(ticket);
             ticket.Dispose();
             Return(player);
         }

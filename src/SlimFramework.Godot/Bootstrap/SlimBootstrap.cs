@@ -15,6 +15,7 @@ public partial class SlimBootstrap : Node
         var app = new SlimApp();
         Configure(app);
         app.Init();
+        AudioPreferences.Apply(app);
         SlimApp.Mount(app);
         App = app;
         OnAppReady();
@@ -40,7 +41,7 @@ public partial class SlimBootstrap : Node
         var assets = new GodotAssetLoader();
         app.Add(assets);
         app.Add(new SaveService(new GodotUserSaveStore()));
-        app.Add(new PreferenceStore(new GodotUserTextStore("prefs.json")));
+        app.Add(new PreferenceStore(new GodotUserTextStore(GodotUserTextStore.DefaultRelativePath)));
         app.Add(new FlowMachine(new GodotPauseSink()));
         app.Add(new GodotAudio(this, assets));
         app.Add(new GodotUiStack(this, assets));

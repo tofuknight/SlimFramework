@@ -18,5 +18,9 @@ public interface IAudio : IModule
 
     void StopMusic();
 
+    /// <summary>在 <see cref="AudioBus.Sfx"/> 上播放一次。</summary>
     void PlaySfx(string path);
+
+    /// <summary>在 <see cref="AudioBus.Ui"/> 上播放一次。UI 点击不走 <see cref="PlaySfx"/>。</summary>
+    void PlayUi(string path);
 }

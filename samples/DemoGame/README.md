@@ -16,11 +16,11 @@ Godot 4.7.2 只认 `Sdk="Godot.NET.Sdk/4.7.2"`。打开工程时如果不是这�
 
 | 值 | 何时 | 引用 |
 | --- | --- | --- |
-| 未设置 / `false` | `dotnet build`、CI | 关掉 SDK 隐式 Godot 包，使用仓库的 `GodotSharp` `$(GodotSharpVersion)`（4.7.2）。配置为 Debug / Release |
+| 未设置 / `false` | `dotnet build`、`.github/workflows/ci.yml` | 关掉 SDK 隐式 Godot 包，使用仓库的 `GodotSharp` `$(GodotSharpVersion)`（4.7.2）。配置为 Debug / Release |
 | `true` | 编辑器构建传入 `-p:GodotTargetPlatform=<平台>` | SDK 自带的 GodotSharp、Debug 下的 GodotSharpEditor、SourceGenerators。配置为 Debug / ExportDebug / ExportRelease |
 
 ```bash
-# 与 CI 相同
+# 与 .github/workflows/ci.yml 的构建同一条命令。CI 使用 -c Release，并再跑 Demo.Runner。
 dotnet build ../../SlimFramework.sln
 
 # 与编辑器相同（linuxbsd / windows / macos）
@@ -32,3 +32,15 @@ dotnet build SlimFramework.DemoGame.csproj -p:SlimDemoGameEditorBuild=false
 ```
 
 两种路径都输出到 `.godot/mono/temp/bin/`。SDK 在还原 NuGet 之前就改了这个目录，编辑器也从这里加载 `SlimFramework.DemoGame.dll`。
+
+## 主场景在验什么
+
+`GameRoot.OnAppReady` 先跑 `AdapterSmoke`，再跑无头的 `DemoSession`。冒烟用的是 Bootstrap 已经挂上的服务，不是另一套 `MemorySaveStore`：
+
+- `res://SmokePage.tscn`（根节点是 `Control`）经 `IUiStack.Open` / `CloseTop`
+- `audio.music` / `audio.sfx` / `audio.ui` 写入偏好后再 `AudioPreferences.Apply`，读回 `GodotAudio` 的三条总线
+- 槽位 0 经 `SaveService` 往返，并由另一个 `GodotUserSaveStore` 从 `user://` 读到字节
+
+`dotnet build` 只能证明这些类型编得过。适配器有没有跑，要看 Godot 里这两行输出：`SlimFramework Godot adapter smoke OK`，然后 `SlimFramework DemoSession OK`。无头证明仍是 `dotnet run --project samples/SlimFramework.Demo.Runner`，它不进 Godot。
+
+`SlimBootstrap` 和 `UiPage` 由 `src/SlimFramework.Godot/build/SlimFramework.Godot.targets` 拷到本目录的 `SlimFramework.Scripts/`（不入库）再编译。不要把这两个类型改回适配程序集，否则编辑器 Play 会报 `ScriptTypeBiMap` 重复键。

@@ -20,7 +20,10 @@ public static class TableFiles
         };
     }
 
-    /// <summary>目录内文件名为 <c>{表名}.bytes</c>，与 Luban bin 输出一致。</summary>
+    /// <summary>
+    /// 目录内文件名为 <c>{表名}.bytes</c>，与 Luban bin 输出一致。
+    /// 导出进 PCK 的 <c>res://</c> 没有磁盘文件，改用 Godot 适配里的 <c>GodotTableFiles.FromGodotRes</c>。
+    /// </summary>
     public static Func<string, ByteBuf> FromDirectory(string directory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);

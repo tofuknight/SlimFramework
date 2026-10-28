@@ -10,7 +10,8 @@ option csharp_namespace = "SlimFramework.Contracts.Save.V1";
 // 字段 1（format_version）和 2（display_name）与 back-night SaveGame 相同。
 // 旧档没有 sections，仍能解析；各 contributor 会收到空段并回到默认值。
 // 旧 proto 没有玩法字段，所以这不会清掉玩法数据。
-// format_version 高于框架当前版本时，在迁移器出现之前拒绝加载和覆盖。
+// format_version 高于当前版本时拒绝加载和覆盖。
+// 低于当前版本时由 ISaveMigrator 逐级升高；缺步则拒绝，不把旧信封当成当前格式。
 message SaveSlot {
   int32 format_version = 1;
   string display_name = 2;

@@ -1,0 +1,6 @@
+# Luban 4 最后一版 CLI。运行时仍是 src/SlimFramework/External/Luban 的 cs-bin ByteBuf。
+# 不要改用 Luban 5：生成代码会和这份运行时错位。
+version=4.12.0
+archive=Luban.7z
+sha256=2450048e8943099b6fc65ec989d0287fe1821413e330cccb8d686f16d21f1f45
+source=https://github.com/focus-creative-games/Luban/releases/download/v4.12.0/Luban.7z

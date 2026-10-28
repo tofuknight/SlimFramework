@@ -1,0 +1,30 @@
+<Project>
+  <!--
+    把适配层里要挂到场景上的脚本拷进游戏工程再编译。
+    Godot 只认项目目录下的 res://。类型若留在引用的程序集里，Play 时 ScriptTypeBiMap 会把同一个类加两次。
+    游戏 csproj 需要 Import 本文件。拷贝每次构建都覆盖，源文件以 src/SlimFramework.Godot 为准。
+  -->
+  <PropertyGroup>
+    <SlimFrameworkGodotSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</SlimFrameworkGodotSourceDir>
+    <SlimFrameworkGodotScriptStagingDir>$(MSBuildProjectDirectory)/SlimFramework.Scripts</SlimFrameworkGodotScriptStagingDir>
+    <DefaultItemExcludes>$(DefaultItemExcludes);SlimFramework.Scripts/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SlimFrameworkGodotScript Include="$(SlimFrameworkGodotSourceDir)/Bootstrap/SlimBootstrap.cs">
+      <StagedPath>$(SlimFrameworkGodotScriptStagingDir)/SlimBootstrap.cs</StagedPath>
+    </SlimFrameworkGodotScript>
+    <SlimFrameworkGodotScript Include="$(SlimFrameworkGodotSourceDir)/UI/UiPage.cs">
+      <StagedPath>$(SlimFrameworkGodotScriptStagingDir)/UiPage.cs</StagedPath>
+    </SlimFrameworkGodotScript>
+    <Compile Remove="$(SlimFrameworkGodotScriptStagingDir)/*.cs" />
+    <Compile Include="@(SlimFrameworkGodotScript->'%(StagedPath)')" />
+  </ItemGroup>
+
+  <Target Name="StageSlimFrameworkGodotScripts" BeforeTargets="BeforeCompile">
+    <MakeDir Directories="$(SlimFrameworkGodotScriptStagingDir)" />
+    <Copy SourceFiles="@(SlimFrameworkGodotScript)"
+          DestinationFiles="@(SlimFrameworkGodotScript->'%(StagedPath)')"
+          OverwriteReadOnlyFiles="true" />
+  </Target>
+</Project>

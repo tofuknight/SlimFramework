@@ -20,6 +20,9 @@ project.assets.json
 builds/
 *.pck
 
+# Luban CLI 解压缓存（压缩包本身入库）
+third_party/Luban/.extracted/
+
 # IDE / OS
 .vs/
 .idea/

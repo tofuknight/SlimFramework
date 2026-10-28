@@ -22,4 +22,5 @@
 *.exe binary
 *.pdb binary
 *.bytes binary
+*.7z binary
 *.import binary

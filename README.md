@@ -21,6 +21,12 @@ Sample table + save round-trip: `samples/SlimFramework.Demo/DemoSession.cs`.
 
 Build: `dotnet build SlimFramework.sln`. Headless proof: `dotnet run --project samples/SlimFramework.Demo.Runner`.
 
+CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release` and `dotnet run --project samples/SlimFramework.Demo.Runner`.
+
+Luban CLI is pinned at `third_party/Luban` (4.12.0, not Luban 5). Generate with `tools/Luban/generate.sh`. Games do not pick their own CLI. Runtime stays `src/SlimFramework/External/Luban`.
+
+License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NOTICES.md`.
+
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
 
 # SlimFramework
@@ -42,7 +48,10 @@ dotnet build SlimFramework.sln
 dotnet run --project samples/SlimFramework.Demo.Runner
 dotnet run --project tools/Slim.SaveTool -- pack /tmp/slot.sav night-1
 dotnet run --project tools/Slim.SaveTool -- unpack /tmp/slot.sav
+tools/Luban/generate.sh -t client -c cs-bin -d bin --conf Data/luban.conf -x outputCodeDir=Game/Scripts/Config -x outputDataDir=Game/Resource/Config
 ```
+
+持续集成见 `.github/workflows/ci.yml`：`dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`。
 
 `dotnet build` 不需要安装 Godot。Runner 会加载一张 Luban bin 表、用 protobuf 做一次存档往返，并走一遍流程 / 偏好 / 资源目录。
 
@@ -57,10 +66,13 @@ src/SlimFramework/External/Luban   Luban C# 运行时（命名空间 Luban）
 src/SlimFramework.Godot        Godot 适配（程序集名 SlimFramework.Godot）
 samples/SlimFramework.Demo     示例游戏逻辑，不引用 Godot
 samples/SlimFramework.Demo.Runner
-samples/DemoGame               最小 Godot 工程，主场景跑 DemoSession
+samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适配，再跑 DemoSession
 tools/Slim.SaveTool            只依赖契约的存档信封工具
+tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
+third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
 plugins/                       以后放插件工程
 docs/                          架构、Luban、Protobuf
+.github/workflows/ci.yml       Release 构建和无头 Demo
 ```
 
 ## 接到自己的游戏
@@ -120,7 +132,7 @@ Bootstrap="*res://Game/GameRoot.cs"
 
 约定：
 
-- Luban 运行时在框架里；**表类和 `.bytes` 在游戏里**。示例表在 `samples/SlimFramework.Demo/Config`。
+- Luban 运行时在框架里；**CLI 锁在 `third_party/Luban`（4.12.0）**；**表类和 `.bytes` 在游戏里**。示例表在 `samples/SlimFramework.Demo/Config`，生成脚本是 `tools/Luban/generate.sh`。
 - 框架认识的 protobuf 只有 `SaveSlot` 和 `ResourceRefCatalog`。
 - 玩法 message（示例 `DemoProfile`）编译进游戏工程，作为 `ISaveContributor` 的一段字节放进信封。
 

@@ -1,6 +1,6 @@
 namespace SlimFramework.GodotAdapter;
 
-/// <summary>槽位文件 <c>user://saves/slot_000.sav</c>。不解析 protobuf。</summary>
+/// <summary>槽位文件 <c>user://saves/slot_000.sav</c>。先写临时文件再改名，不解析 protobuf。</summary>
 public sealed class GodotUserSaveStore : ISaveStore
 {
     public string DirectoryName { get; init; } = "saves";
@@ -19,12 +19,7 @@ public sealed class GodotUserSaveStore : ISaveStore
     public void Write(int slot, byte[] payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
-        EnsureDirectory();
-        var path = GetUserPath(slot);
-        using var file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Write);
-        if (file == null)
-            throw new IOException($"无法写入 {path}: {Godot.FileAccess.GetOpenError()}");
-        file.StoreBuffer(payload);
+        AtomicUserFile.WriteBytes(GetUserPath(slot), payload);
     }
 
     public bool TryRead(int slot, out byte[] payload)
@@ -56,16 +51,5 @@ public sealed class GodotUserSaveStore : ISaveStore
         if (!Godot.FileAccess.FileExists(path))
             return false;
         return Godot.DirAccess.RemoveAbsolute(path) == Godot.Error.Ok;
-    }
-
-    private void EnsureDirectory()
-    {
-        using var dir = Godot.DirAccess.Open("user://");
-        if (dir == null)
-            throw new IOException($"无法打开 user://: {Godot.DirAccess.GetOpenError()}");
-
-        var err = dir.MakeDirRecursive(DirectoryName.Trim('/'));
-        if (err != Godot.Error.Ok && err != Godot.Error.AlreadyExists)
-            throw new IOException($"创建存档目录失败: {err}");
     }
 }

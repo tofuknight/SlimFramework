@@ -1,8 +1,10 @@
 namespace SlimFramework.GodotAdapter;
 
-/// <summary>把偏好 JSON 写到 <c>user://</c>。</summary>
+/// <summary>把偏好 JSON 写到 <c>user://</c>。先写临时文件再改名。</summary>
 public sealed class GodotUserTextStore : ITextStore
 {
+    public const string DefaultRelativePath = "prefs.json";
+
     private readonly string _userPath;
 
     public GodotUserTextStore(string relativeUserPath) =>
@@ -20,11 +22,5 @@ public sealed class GodotUserTextStore : ITextStore
         return true;
     }
 
-    public void Write(string text)
-    {
-        using var file = Godot.FileAccess.Open(_userPath, Godot.FileAccess.ModeFlags.Write);
-        if (file == null)
-            throw new IOException($"无法写入 {_userPath}: {Godot.FileAccess.GetOpenError()}");
-        file.StoreString(text ?? "");
-    }
+    public void Write(string text) => AtomicUserFile.WriteText(_userPath, text ?? "");
 }

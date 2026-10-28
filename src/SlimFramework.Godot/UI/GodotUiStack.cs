@@ -2,7 +2,10 @@ using Godot;
 
 namespace SlimFramework.GodotAdapter;
 
-/// <summary>全屏 UI 宿主。按 <see cref="UiLayer"/> 排序，可选按路径缓存一份实例。</summary>
+/// <summary>
+/// 全屏 UI 宿主。打开顺序是栈，<see cref="CloseTop"/> 关闭最后打开的页面。
+/// <see cref="UiLayer"/> 只参与绘制顺序。可选按路径缓存一份实例。
+/// </summary>
 public sealed class GodotUiStack : IUiStack
 {
     private readonly Node _parent;
@@ -99,11 +102,7 @@ public sealed class GodotUiStack : IUiStack
         if (_stack.Count == 0)
             return;
 
-        var top = _stack
-            .OrderBy(entry => (int)entry.Layer)
-            .ThenBy(entry => entry.SubOrder)
-            .Last();
-        Close(top);
+        Close(_stack[^1]);
     }
 
     private void Close(PageEntry entry)

@@ -23,5 +23,7 @@ public sealed class MemorySaveStore : ISaveStore
         return false;
     }
 
+    public bool Exists(int slot) => _slots.TryGetValue(slot, out var payload) && payload.Length > 0;
+
     public bool Delete(int slot) => _slots.Remove(slot);
 }

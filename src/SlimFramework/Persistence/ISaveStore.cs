@@ -7,5 +7,8 @@ public interface ISaveStore
 
     bool TryRead(int slot, out byte[] payload);
 
+    /// <summary>槽位里是否已有字节。不解析载荷。</summary>
+    bool Exists(int slot);
+
     bool Delete(int slot);
 }

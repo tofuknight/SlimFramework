@@ -40,6 +40,16 @@ public sealed class GodotUserSaveStore : ISaveStore
         return payload.Length > 0;
     }
 
+    public bool Exists(int slot)
+    {
+        var path = GetUserPath(slot);
+        if (!Godot.FileAccess.FileExists(path))
+            return false;
+
+        using var file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+        return file != null && file.GetLength() > 0;
+    }
+
     public bool Delete(int slot)
     {
         var path = GetUserPath(slot);

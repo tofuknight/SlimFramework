@@ -1,6 +1,6 @@
 namespace SlimFramework.UI;
 
-/// <summary>逻辑层。数值越大越靠前。</summary>
+/// <summary>绘制层。数值越大越靠前。不决定 <see cref="IUiStack.CloseTop"/> 的关闭顺序。</summary>
 public enum UiLayer
 {
     Auto = 0,
@@ -13,6 +13,7 @@ public interface IUiStack : IModule
 {
     void Open(string scenePath, UiLayer layer = UiLayer.Auto, bool cache = false);
 
+    /// <summary>关闭最后打开的页面。<see cref="UiLayer"/> 只影响绘制，不决定关闭顺序。</summary>
     void CloseTop();
 
     int OpenCount { get; }

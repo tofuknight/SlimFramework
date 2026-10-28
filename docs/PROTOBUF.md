@@ -19,7 +19,7 @@
 
 ## 存档怎么接
 
-`SaveService.Save` 让每个 `ISaveContributor` 交一段字节，写进 `SaveSlot.sections`，再交给 `ISaveStore`。
+`SaveService.Save` 让每个 `ISaveContributor` 交一段字节，写进 `SaveSlot.sections`，再交给 `ISaveStore`。该槽里已有、但当前没有注册 contributor 的 section 会原样写回。`format_version` 小于 1，或高于 `SaveService.DefaultFormatVersion`，在有迁移器之前会拒绝，已有文件不会被覆盖。`TryPeek` 只读显示名和 section id，不调用 `Restore`。`TryDeleteSlot` 和 `EnumerateOccupiedSlots` 只动存储，不改玩法状态。
 
 ```csharp
 public sealed class ProfileContributor : ISaveContributor
@@ -64,7 +64,7 @@ dotnet run --project tools/Slim.SaveTool -- unpack slot.sav
 ```csharp
 var catalog = ResourceCatalog.Parse(bytes);
 if (catalog.TryGet(key, out var entry))
-    loader.Load<PackedScene>(entry.Path);
+    loader.Load<PackedScene>(entry);
 ```
 
-key 怎么分配由游戏决定。本框架不生成这张表，也没有 back-night 那套 uid 回退加载；`GodotAssetLoader` 同时接受 `res://` 和 `uid://`，调用方自己选。
+`ResourceRefEntry.LoadKey` 在 Uid 非空时用 Uid，否则用 Path。key 怎么分配由游戏决定。本框架不生成这张表。Uid 加载失败后再回退 Path 仍不做。`GodotAssetLoader` 同时接受 `res://` 和 `uid://`。

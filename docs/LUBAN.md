@@ -42,7 +42,7 @@ CLI 锁在本仓库，游戏不要再自己挑小版本。
 - 校验：`third_party/Luban/luban.lock`
 - 脚本：`tools/Luban/generate.sh`。核对 sha256，解压到 `third_party/Luban/.extracted/`（不入库），再执行 `dotnet Luban/Luban.dll`
 
-锁的是 Luban 4.12.0，不是 Luban 5。运行时是 Luban 4 的 `cs-bin` `ByteBuf`，跟 5 的生成代码对不上。需要本机有 `dotnet` 和 `7z`（Debian/Ubuntu：`p7zip-full`）。Windows 用 Git Bash 或 WSL 跑同一条脚本。
+锁的是 Luban 4.12.0，不是 Luban 5。运行时是 Luban 4 的 `cs-bin` `ByteBuf`，跟 5 的生成代码对不上。需要本机有 `dotnet`、`7z`（Debian/Ubuntu：`p7zip-full`），以及 `sha256sum` 或 `shasum`。Windows 用 Git Bash 或 WSL 跑同一条脚本。macOS 没有 `sha256sum` 时脚本改用 `shasum -a 256`。
 
 ```bash
 tools/Luban/generate.sh \
@@ -56,7 +56,7 @@ tools/Luban/generate.sh \
 
 以游戏自己的 `luban.conf` 为准。不要把输出目录指到 `src/SlimFramework`。
 
-CI（`.github/workflows/ci.yml`）不跑本脚本：仓库里没有 `luban.conf`，示例表是手写的。无参数调用会先做 sha256（依赖 `sha256sum`，macOS 默认没有），需要解压时还要 `7z`。校验和解压都通过后，以退出码 2 结束。pin、提交范围、以及这项缺口见 [architecture.md](architecture.md) 和 [gap-backlog.md](gap-backlog.md)。
+CI（`.github/workflows/ci.yml`）不跑本脚本：仓库里没有 `luban.conf`，示例表是手写的。无参数调用会先做 sha256（有 `sha256sum` 就用它，否则 `shasum -a 256`，取第一列），需要解压时还要 `7z`。校验和解压都通过后，以退出码 2 结束。pin 与提交范围见 [architecture.md](architecture.md)。
 
 生成后的 `Tables` 会 `loader("表名")`。保证 `outputDataDir` 下的文件名是 `{表名}.bytes`。
 

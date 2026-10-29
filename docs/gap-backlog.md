@@ -29,12 +29,6 @@
 
 禁止为了 CI 把生成代码或 `.bytes` 写进 `src/SlimFramework`。没有入库的 `luban.conf` 之前，不要把示例表改成 CLI 产物。
 
-### 3. `sha256sum` 在 macOS 上不可用
-
-`tools/Luban/generate.sh` 用 `sha256sum` 读 `third_party/Luban/luban.lock` 的 `sha256`。macOS 默认是 `shasum -a 256`。
-
-补法：两个命令用先存在的那个，仍取第一列，与 lock 里的值比较。禁止改 lock 里的哈希，禁止改成跳过校验。`Luban.7z` 的 pin 仍是 4.12.0。
-
 ### 4. 插件脚手架加一个延后功能
 
 `plugins/` 还没有 csproj。按 [extension-rules.md](extension-rules.md) 的脚手架加一个类库，并只带一个延后功能当例子。例子用点外部关闭。

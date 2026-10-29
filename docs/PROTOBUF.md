@@ -1,6 +1,6 @@
 # Protobuf
 
-两套 proto，编译都走 `Grpc.Tools`（`GrpcServices="None"`，只生成 message）。版本在 `Directory.Build.props`：`Google.Protobuf` 3.34.1、`Grpc.Tools` 2.80.0。不需要手跑 protoc。
+两套 proto，编译都走 `Grpc.Tools`（`GrpcServices="None"`，只生成 message）。版本在 `Directory.Build.props`：`Google.Protobuf` 3.34.1、`Grpc.Tools` 2.80.0。不需要手跑 protoc。契约放哪、什么样的格式变更必须走 PR，见 [architecture.md](architecture.md) 和 [../CONTRIBUTING.md](../CONTRIBUTING.md)。
 
 ## 框架契约
 

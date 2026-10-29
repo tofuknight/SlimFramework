@@ -11,7 +11,8 @@
     开关 SlimDemoGameEditorBuild（判定在 Directory.Build.props，赶在 SDK 自动填写平台之前）：
       未设置 / false — 默认。dotnet build SlimFramework.sln 不需要安装编辑器。
         CI 是 .github/workflows/ci.yml：先 dotnet build SlimFramework.sln -c Release，
-        再 dotnet run 项目 samples/SlimFramework.Demo.Runner。这条路径同样不需要编辑器。
+        再 dotnet run 项目 samples/SlimFramework.Demo.Runner，然后安装 p7zip-full
+        并无参数跑 tools/Luban/generate.sh（期望退出码 2）。dotnet 这条路径不需要编辑器。
         关掉 SDK 的隐式 GodotSharp / SourceGenerators，改用仓库 PackageReference
         GodotSharp $(GodotSharpVersion)（根 Directory.Build.props，与编辑器同为 4.7.2）。
         解决方案配置补上 Release（SDK 默认只有 Debug、ExportDebug、ExportRelease）。

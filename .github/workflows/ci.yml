@@ -17,3 +17,17 @@ jobs:
         run: dotnet build SlimFramework.sln -c Release
       - name: Headless demo
         run: dotnet run --project samples/SlimFramework.Demo.Runner
+      - name: Install p7zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+      - name: Luban generate.sh checksum and usage
+        run: |
+          if tools/Luban/generate.sh; then
+            echo "tools/Luban/generate.sh exited 0, expected 2"
+            exit 1
+          else
+            code=$?
+            if [ "$code" -ne 2 ]; then
+              echo "tools/Luban/generate.sh exited $code, expected 2"
+              exit 1
+            fi
+          fi

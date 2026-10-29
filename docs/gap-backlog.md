@@ -16,19 +16,6 @@
 
 补法：在 `AdapterSmoke` 里对 UI 总线实际播一次，并用 `FromGodotRes` 经 `FileAccess` 读一张 `res://` 下的 `.bytes`。完成标准是 Play `Main.tscn` 仍打出 CONTRIBUTING 里的两行 OK。不要把这张表生成进 `src/SlimFramework`。
 
-### 2. CI 跑 `generate.sh`，或维持书面约定
-
-当前约定写在 [architecture.md](architecture.md)：CI 不跑 `tools/Luban/generate.sh`。本仓库没有 `luban.conf`，示例表是手写的。
-
-脚本无参数会先做 sha256，需要时用 `7z` 解压，然后以退出码 2 结束。`ubuntu-latest` 有 `sha256sum`，不保证有 `7z`。第一次解压缺 `7z` 会失败。
-
-补法二选一，并改 architecture 里的「当前约定」：
-
-- CI 安装 `p7zip-full`，执行 `tools/Luban/generate.sh`，期望退出码 2（校验 + 用法）。
-- 或给脚本加一条只核对 `luban.lock`、不需要 `7z` 的路径，CI 走那条。
-
-禁止为了 CI 把生成代码或 `.bytes` 写进 `src/SlimFramework`。没有入库的 `luban.conf` 之前，不要把示例表改成 CLI 产物。
-
 ### 4. 插件脚手架加一个延后功能
 
 `plugins/` 还没有 csproj。按 [extension-rules.md](extension-rules.md) 的脚手架加一个类库，并只带一个延后功能当例子。例子用点外部关闭。

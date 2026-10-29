@@ -21,7 +21,7 @@ Sample table + save round-trip: `samples/SlimFramework.Demo/DemoSession.cs`.
 
 Build: `dotnet build SlimFramework.sln`. Headless proof: `dotnet run --project samples/SlimFramework.Demo.Runner`.
 
-CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release` and `dotnet run --project samples/SlimFramework.Demo.Runner`.
+CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release`, `dotnet run --project samples/SlimFramework.Demo.Runner`, then installs `p7zip-full` and runs `tools/Luban/generate.sh` with no arguments, expecting exit code 2. That call checks the Luban archive and prints usage. It does not generate tables. There is no `luban.conf` in this repo.
 
 Luban CLI is pinned at `third_party/Luban` (4.12.0, not Luban 5). Generate with `tools/Luban/generate.sh`. Games do not pick their own CLI. Runtime stays `src/SlimFramework/External/Luban`.
 
@@ -55,7 +55,7 @@ dotnet run --project tools/Slim.SaveTool -- unpack /tmp/slot.sav
 tools/Luban/generate.sh -t client -c cs-bin -d bin --conf Data/luban.conf -x outputCodeDir=Game/Scripts/Config -x outputDataDir=Game/Resource/Config
 ```
 
-持续集成见 `.github/workflows/ci.yml`：`dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`。
+持续集成见 `.github/workflows/ci.yml`：`dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`，再安装 `p7zip-full` 并无参数执行 `tools/Luban/generate.sh`（期望退出码 2，只核对压缩包并打印用法，不生成表）。
 
 `dotnet build` 不需要安装 Godot。Runner 会加载一张 Luban bin 表、用 protobuf 做一次存档往返，并走一遍流程 / 偏好 / 资源目录。
 

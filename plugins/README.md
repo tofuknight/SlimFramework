@@ -6,4 +6,8 @@
 - 禁止引用 `samples/`、游戏程序集、具体关卡或剧情代码。
 - 本目录下的工程会走 `Directory.Build.targets` 的引用检查。
 
-硬性边界见 [docs/extension-rules.md](../docs/extension-rules.md)。脚手架尚未落地，规格在该文，缺口在 [docs/gap-backlog.md](../docs/gap-backlog.md)。
+`ClickOutsideClose` 是第一个插件：指针在栈顶页面矩形外按下时调用 `IUiStack.CloseTop`。`SlimBootstrap.Configure` 不 `Use` 它。`samples/DemoGame` 的 `GameRoot` 在 `base.Configure` 之后 `Use`。无头 `samples/SlimFramework.Demo` 不引用它。
+
+钩子在 `GodotUiStack.PagePresented` / `PageDismissed`。没有订阅者时，打开和关闭与未挂插件时相同。
+
+硬性边界见 [docs/extension-rules.md](../docs/extension-rules.md)。

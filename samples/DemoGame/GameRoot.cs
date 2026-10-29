@@ -1,4 +1,5 @@
 using Godot;
+using SlimFramework.ClickOutsideClose;
 using SlimFramework.Demo;
 using SlimFramework.GodotAdapter;
 
@@ -13,6 +14,7 @@ public partial class GameRoot : SlimBootstrap
     {
         base.Configure(app);
         app.Use(_plugin);
+        app.Use(new ClickOutsideClosePlugin());
     }
 
     protected override void OnAppReady()

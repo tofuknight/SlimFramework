@@ -41,7 +41,7 @@ dotnet build SlimFramework.DemoGame.csproj -p:SlimDemoGameEditorBuild=false
 
 - `res://SmokePage.tscn`（根节点是 `Control`）经 `IUiStack.Open` / `CloseTop`
 - `audio.music` / `audio.sfx` / `audio.ui` 写入偏好后再 `AudioPreferences.Apply`，读回 `GodotAudio` 的三条总线
-- `IAudio.PlayUi("res://ui-click.wav")` 在 `AudioBus.Ui`（总线名 `UI`）上实际播放一次。音量断言不能代替这次播放
+- `IAudio.PlayUi`、`PlayMusic`、`PlaySfx` 都用 `res://ui-click.wav`。之后各有一个正在播放、`Stream` 非空的 `AudioStreamPlayer`：总线名 `UI`、`Music`、`SFX`。音量断言不能代替这三次播放
 - `GodotTableFiles.FromGodotRes("res://Config")` 经 `FileAccess` 读 `tbitem.bytes`。字节与 `samples/SlimFramework.Demo/Fixtures/tbitem.bytes` 相同，是手写示例，不生成进 `src/SlimFramework`
 - 槽位 0 经 `SaveService` 往返，并由另一个 `GodotUserSaveStore` 从 `user://` 读到字节
 

@@ -98,7 +98,7 @@ Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `
 
 当前约定（要改就和 CI 或脚本同一个 PR 改本文）：
 
-- CI 不跑 `generate.sh`。本仓库没有 `luban.conf`。示例表是手写的，Runner 用 `ByteBuf` 重编码后和 `tbitem.bytes` 对比。不要为了让 CI 跑起来，把生成物写进核心。
+- CI 安装 `p7zip-full` 后无参数执行 `generate.sh`，期望退出码 2（核对 sha256、必要时解压、打印用法后结束）。本仓库没有 `luban.conf`。示例表是手写的，Runner 用 `ByteBuf` 重编码后和 `tbitem.bytes` 对比。这次调用不会生成表，也不要把生成物写进核心。
 - 提交进 git 的是压缩包、`luban.lock`、`generate.sh`、运行时源文件、手写示例表和 `tbitem.bytes`。不提交 `.extracted/`。
 - `generate.sh` 做的事：读 lock，优先用 `sha256sum`、否则用 `shasum -a 256` 核对压缩包，必要时用 `7z` 解压，再 `dotnet Luban.dll`。它不会更新示例表。
 - 两个命令用先存在的那个，取第一列和 `luban.lock` 的 `sha256` 比较。都没有就失败，不跳过校验。哈希和 pin 仍是 Luban 4.12.0，不改 lock。

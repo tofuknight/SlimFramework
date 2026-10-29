@@ -54,7 +54,7 @@ dotnet run --project samples/SlimFramework.Demo.Runner
 
 `dotnet build` 不需要安装 Godot。无头 Runner 不进编辑器，也不能代替 AdapterSmoke。
 
-Luban：`tools/Luban/generate.sh`。CI 当前不跑它。约定和原因见 [docs/architecture.md](docs/architecture.md)。
+Luban：`tools/Luban/generate.sh`。CI 安装 `p7zip-full` 后无参数执行它，期望退出码 2。约定见 [docs/architecture.md](docs/architecture.md)。
 
 ## 向上依赖的机械检查
 

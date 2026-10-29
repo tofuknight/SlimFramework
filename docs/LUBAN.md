@@ -56,7 +56,9 @@ tools/Luban/generate.sh \
 
 以游戏自己的 `luban.conf` 为准。不要把输出目录指到 `src/SlimFramework`。
 
-CI（`.github/workflows/ci.yml`）不跑本脚本：仓库里没有 `luban.conf`，示例表是手写的。无参数调用会先做 sha256（有 `sha256sum` 就用它，否则 `shasum -a 256`，取第一列），需要解压时还要 `7z`。校验和解压都通过后，以退出码 2 结束。pin 与提交范围见 [architecture.md](architecture.md)。
+CI（`.github/workflows/ci.yml`）安装 `p7zip-full` 后无参数执行本脚本，期望退出码 2。仓库里没有 `luban.conf`，示例表仍是手写的，这次调用不会生成表。
+
+无参数调用会先做 sha256（有 `sha256sum` 就用它，否则 `shasum -a 256`，取第一列），需要解压时还要 `7z`。校验和解压都通过后，以退出码 2 结束。pin 与提交范围见 [architecture.md](architecture.md)。
 
 生成后的 `Tables` 会 `loader("表名")`。保证 `outputDataDir` 下的文件名是 `{表名}.bytes`。
 

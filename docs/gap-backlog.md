@@ -1,12 +1,19 @@
 # 缺口
 
-补洞按这个顺序。P1 没做完，不构成拒绝无关 PR 的理由。禁止把还没落地的行为写成已经有。明确不做的项不要开任务。
+P1 的四项已经清掉，不再是待办。下面的 P2 是脚手架落地之后的插件，不是还没做完的 P1。禁止把还没落地的行为写成已经有。明确不做的项不要开任务。
 
 规则正文在 [architecture.md](architecture.md)、[extension-rules.md](extension-rules.md)、[../CONTRIBUTING.md](../CONTRIBUTING.md)。
 
-## P1 现在可以补
+## P1 已清掉
 
-按下面的顺序，一项一个 PR。
+原来的「现在可以补」四项都已合入 `main`。一项一个 PR。这里只留落点，不再当开放工作。
+
+| # | 内容 | 落点 |
+| --- | --- | --- |
+| 1 | `AdapterSmoke` 调用 `PlayUi`，并用 `FromGodotRes` 读 `res://` 表 | `samples/DemoGame/AdapterSmoke.cs` |
+| 2 | CI 安装 `p7zip-full` 后无参数执行 `generate.sh`，期望退出码 2 | `.github/workflows/ci.yml`。约定见 [architecture.md](architecture.md) |
+| 3 | 没有 `sha256sum` 时用 `shasum -a 256`，仍核对 lock，不跳过 | `tools/Luban/generate.sh` |
+| 4 | 插件脚手架，例子是点外部关闭 | `plugins/ClickOutsideClose` |
 
 ## P2 及以后
 

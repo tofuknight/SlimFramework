@@ -35,6 +35,8 @@ dotnet build SlimFramework.DemoGame.csproj -p:SlimDemoGameEditorBuild=false
 
 ## 主场景在验什么
 
+`GameRoot.Configure` 在 `base.Configure` 之后 `Use` `ClickOutsideClosePlugin`。`SlimBootstrap.Configure` 不挂它。冒烟不点击，所以这两行 OK 不覆盖点外部关闭。手动验法：打开一个矩形没有铺满视口的页面，在矩形外按下鼠标左键，栈顶应被 `CloseTop` 关掉。未 `Use` 该插件时，`GodotUiStack` 的打开和关闭与没有 `PagePresented` / `PageDismissed` 订阅者时相同。
+
 `GameRoot.OnAppReady` 先跑 `AdapterSmoke`，再跑无头的 `DemoSession`。冒烟用的是 Bootstrap 已经挂上的服务，不是另一套 `MemorySaveStore`：
 
 - `res://SmokePage.tscn`（根节点是 `Control`）经 `IUiStack.Open` / `CloseTop`

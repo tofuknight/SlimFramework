@@ -8,25 +8,12 @@
 
 按下面的顺序，一项一个 PR。
 
-### 4. 插件脚手架加一个延后功能
-
-`plugins/` 还没有 csproj。按 [extension-rules.md](extension-rules.md) 的脚手架加一个类库，并只带一个延后功能当例子。例子用点外部关闭。
-
-约束：
-
-- 工程在 `plugins/` 下，实现 `IPlugin`，加入解决方案。
-- 行为在插件里。允许调用 `IUiStack` 已有的公开方法。
-- 若必须给 `IUiStack` 加钩子：未 `Use` 该插件时，行为与现在一致。钩子说明写进 PR。
-- `SlimBootstrap.Configure` 不 `Use` 它。需要 Godot 的插件由 `GameRoot` 或真实游戏 `Use`，禁止接进 `samples/SlimFramework.Demo`。
-- 这个 PR 不要同时做异步加载、交叉淡化、更完整的 UI 生命周期。
-
 ## P2 及以后
 
 脚手架落地之后，一项一个插件 PR：
 
 - 异步加载、分帧卸载
 - BGM 交叉淡化
-- 点外部关闭（P1 没把它当例子时才留在这里）
 - 比 `IUiPage.OnOpen` / `OnClose` 更完整的 UI 生命周期
 
 可选加固，不是功能：`GuardFrameworkDoesNotReferenceGame` 的条件加上路径子串 `plugin`，让 `src/` 引用 `plugins/` 时构建失败。加上之前，审阅已经按 [extension-rules.md](extension-rules.md) 拒绝这种引用。

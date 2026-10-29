@@ -44,6 +44,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
     <ProjectReference Include="..\SlimFramework.Demo\SlimFramework.Demo.csproj" />
+    <ProjectReference Include="..\..\plugins\ClickOutsideClose\ClickOutsideClose.csproj" />
   </ItemGroup>
   <Target Name="GuardDemoGameGodotSharpSwitch" BeforeTargets="ResolvePackageAssets">
     <ItemGroup>

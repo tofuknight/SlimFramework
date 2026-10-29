@@ -26,6 +26,18 @@ public sealed class GodotUiStack : IUiStack
 
     public int OpenCount => _stack.Count;
 
+    /// <summary>
+    /// 页面已进入栈，并且 <see cref="IUiPage.OnOpen"/> 已经调用。
+    /// 没有订阅者时，打开路径不变。订阅者不要在回调里再调用 <see cref="Open"/> 或 <see cref="CloseTop"/>。
+    /// </summary>
+    public event Action<Control>? PagePresented;
+
+    /// <summary>
+    /// 页面已离开栈，并且 <see cref="IUiPage.OnClose"/> 已经调用，节点尚未销毁或收进缓存。
+    /// 没有订阅者时，关闭路径不变。
+    /// </summary>
+    public event Action<Control>? PageDismissed;
+
     public void Init(SlimApp app)
     {
         _canvas = new CanvasLayer
@@ -94,6 +106,7 @@ public sealed class GodotUiStack : IUiStack
         if (entry.Root is IUiPage page)
             page.OnOpen();
         Restack();
+        PagePresented?.Invoke(entry.Root);
         return entry.Root;
     }
 
@@ -110,6 +123,7 @@ public sealed class GodotUiStack : IUiStack
         _stack.Remove(entry);
         if (entry.Root is IUiPage page)
             page.OnClose();
+        PageDismissed?.Invoke(entry.Root);
 
         if (entry.Cache && !_cache.ContainsKey(entry.Path))
         {

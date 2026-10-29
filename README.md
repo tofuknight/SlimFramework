@@ -11,6 +11,8 @@ tools/Slim.SaveTool → SlimFramework.Contracts
 plugins/*           → SlimFramework (+ optional SlimFramework.Godot)
 ```
 
+`plugins/ClickOutsideClose` closes the top page when the pointer presses outside that page's rectangle. Games `Use` it after `base.Configure`. `SlimBootstrap.Configure` does not. `samples/SlimFramework.Demo` must not reference it. Hooks are `GodotUiStack.PagePresented` and `PageDismissed`; with no subscriber, open and close stay as they are.
+
 Never add a `ProjectReference` from `src/` or `tools/` to `samples/` or to a game. Game code may reference the framework. `SlimFramework` must not reference `GodotSharp`; engine types live in `SlimFramework.Godot` (`namespace SlimFramework.GodotAdapter`).
 
 Public entry: `SlimApp` (`src/SlimFramework/SlimApp.cs`). Modules implement `IModule`. Plugins implement `IPlugin` and are attached with `SlimApp.Use`. Godot games subclass `SlimBootstrap`.
@@ -74,7 +76,7 @@ samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适�
 tools/Slim.SaveTool            只依赖契约的存档信封工具
 tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
-plugins/                       以后放插件工程
+plugins/ClickOutsideClose     点页面矩形外关闭栈顶。游戏 Use，不进 SlimBootstrap 默认列表
 docs/                          分层、扩展规则、缺口、Luban、Protobuf
 CONTRIBUTING.md                贡献方式与合并门禁
 .github/workflows/ci.yml       Release 构建和无头 Demo
@@ -148,6 +150,6 @@ Bootstrap="*res://Game/GameRoot.cs"
 
 保留了模块、帧更新、事件、流程、存档参与者、资源引用、UI 层、Node 单例这些用途，但组合根改成显式的 `SlimApp`，不再用反射单例当服务定位器。Godot API 只出现在 `SlimFramework.Godot`。核心可以在没有编辑器的进程里跑（Demo Runner 就是这样）。
 
-刻意没搬过来的东西：异步分帧卸载、BGM 交叉淡化、弹窗点外部关闭、更完整的 UI 生命周期。这些进 `plugins/`，不进核心。见 [docs/extension-rules.md](docs/extension-rules.md)。
+刻意没搬过来的东西：异步分帧卸载、BGM 交叉淡化、更完整的 UI 生命周期。点外部关闭在 `plugins/ClickOutsideClose`，不进核心。见 [docs/extension-rules.md](docs/extension-rules.md)。
 
 分层、双 SDK、Luban / Protobuf 放哪，以及类型落点：[docs/architecture.md](docs/architecture.md)。贡献和合并门禁：[CONTRIBUTING.md](CONTRIBUTING.md)。缺口：[docs/gap-backlog.md](docs/gap-backlog.md)。

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.ClickOutsideClose</RootNamespace>
+    <Description>点栈顶页面矩形外部时关闭。由游戏 Use，不进 SlimBootstrap 默认列表。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework\SlimFramework.csproj" />
+    <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
+  </ItemGroup>
+</Project>

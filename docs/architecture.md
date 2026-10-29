@@ -130,6 +130,6 @@ Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `
 
 核心类型：`SlimApp`、`IModule`、`ITickable`、`IPlugin`、`TickList`、`EventBus`、`IEvent`、`FlowMachine`、`IFlowState`、`IPauseSink`、`SaveService`、`ISaveContributor`、`ISaveStore`、`ISaveMigrator`、`MemorySaveStore`、`PreferenceStore`、`ITextStore`、`ResourceCatalog`、`IAssetLoader`、`TableFiles`、`IAudio`、`AudioPreferences`、`IUiStack`、`UiLayer`、`AudioBus`。
 
-适配类型：`SlimBootstrap`、`GodotAssetLoader`、`GodotAudio`、`GodotUiStack`、`IUiPage`、`UiPage`、`NodeSingleton<T>`、`GodotUserSaveStore`、`GodotUserTextStore`、`GodotTableFiles`、`GodotPauseSink`。其中 `SlimBootstrap` 和 `UiPage` 的编译位置见 [extension-rules.md](extension-rules.md)。
+适配类型：`SlimBootstrap`、`GodotAssetLoader`、`GodotAudio`、`GodotUiStack`、`IUiPage`、`UiPage`、`NodeSingleton<T>`、`GodotUserSaveStore`、`GodotUserTextStore`、`GodotTableFiles`、`GodotPauseSink`。其中 `SlimBootstrap` 和 `UiPage` 的编译位置见 [extension-rules.md](extension-rules.md)。`GodotUiStack` 另有可选事件 `PagePresented` / `PageDismissed`。没有订阅者时，打开和关闭不变。点外部关闭插件见 [extension-rules.md](extension-rules.md)。
 
 `SlimApp` 是组合根。`Add` 在 `Init` 之前，关闭顺序相反。`Use` 在 `Init` 之前。`TickFrame` 驱动每个 `ITickable`。`SlimApp.Current` 只由 `SlimApp.Mount` 设置。每种具体类型、每个框架接口（`IAudio`、`IUiStack`、`IAssetLoader` 等）只有一个实例。`IModule` / `ITickable` 不是服务键。模块在主线程用，内部不加锁。

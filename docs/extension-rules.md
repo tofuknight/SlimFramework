@@ -6,7 +6,7 @@
 
 核心保持瘦。可选能力进 `plugins/`，由游戏 `SlimApp.Use`，不写进 `SlimBootstrap.Configure` 的默认列表。
 
-现在 `plugins/` 只有 `README.md` 和 `Directory.Build.targets`。还没有插件工程。脚手架规格在下面，落地状态见 [gap-backlog.md](gap-backlog.md)。
+第一个插件是 `plugins/ClickOutsideClose`（点外部关闭）。`samples/DemoGame` 的 `GameRoot` 在 `base.Configure` 之后 `Use` 它。`SlimBootstrap.Configure` 不 `Use` 它。无头 `samples/SlimFramework.Demo` 不引用它。脚手架形状如下。
 
 ### 边界
 
@@ -30,7 +30,7 @@
 
 ### 脚手架
 
-第一个插件 PR 按这个形状加，不要另起目录约定：
+插件工程按这个形状，不要另起目录约定：
 
 ```
 plugins/<Name>/<Name>.csproj
@@ -71,7 +71,7 @@ public sealed class ExamplePlugin : IPlugin
 | --- | --- |
 | 异步加载、分帧卸载 | 插件。禁止扩成资源管线或 DI |
 | BGM 交叉淡化 | 插件。`IAudio` 现有的 `PlayMusic` / `StopMusic` 保持直接切换，除非钩子 PR 写明未挂插件时行为不变 |
-| 点外部关闭 | 插件。优先作为脚手架的那一个例子 |
+| 点外部关闭 | `plugins/ClickOutsideClose`。行为在插件里，关闭调用已有的 `IUiStack.CloseTop`。适配层钩子是 `GodotUiStack.PagePresented` / `PageDismissed`（参数为 `Control`）。没有订阅者时，打开和关闭与未挂该插件时相同。 |
 | 更完整的 UI 生命周期 | 插件。核心侧页面生命周期只有 `IUiPage.OnOpen` / `OnClose` |
 
 明确不进仓库的膨胀项见 [gap-backlog.md](gap-backlog.md)。

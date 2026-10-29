@@ -100,8 +100,8 @@ Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `
 
 - CI 不跑 `generate.sh`。本仓库没有 `luban.conf`。示例表是手写的，Runner 用 `ByteBuf` 重编码后和 `tbitem.bytes` 对比。不要为了让 CI 跑起来，把生成物写进核心。
 - 提交进 git 的是压缩包、`luban.lock`、`generate.sh`、运行时源文件、手写示例表和 `tbitem.bytes`。不提交 `.extracted/`。
-- `generate.sh` 做的事：读 lock，用 `sha256sum` 核对压缩包，必要时用 `7z` 解压，再 `dotnet Luban.dll`。它不会更新示例表。
-- 脚本用 `sha256sum`（GNU）核对压缩包。macOS 默认没有这个命令。哈希算法和 `luban.lock` 里的值不能改。可移植性是 [gap-backlog.md](gap-backlog.md) 的 P1。补上之前在带 `sha256sum` 的环境跑（GNU coreutils，或 Git Bash / WSL）。
+- `generate.sh` 做的事：读 lock，优先用 `sha256sum`、否则用 `shasum -a 256` 核对压缩包，必要时用 `7z` 解压，再 `dotnet Luban.dll`。它不会更新示例表。
+- 两个命令用先存在的那个，取第一列和 `luban.lock` 的 `sha256` 比较。都没有就失败，不跳过校验。哈希和 pin 仍是 Luban 4.12.0，不改 lock。
 
 升级 pin 属于「Luban pin」门禁：必须 PR，Forge 架构审阅，并跑通 Runner。
 

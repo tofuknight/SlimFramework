@@ -37,9 +37,17 @@ if [[ ! -f "$archive" ]]; then
   exit 1
 fi
 
-actual="$(sha256sum "$archive" | awk '{print $1}')"
-if [[ "$actual" != "$expected" ]]; then
-  echo "Luban 压缩包校验失败：期望 $expected，实际 $actual" >&2
+# sha256sum 是 GNU coreutils。macOS 默认没有，用 shasum -a 256。两者都取第一列。
+if command -v sha256sum >/dev/null 2>&1; then
+  actual="$(sha256sum "$archive" | awk '{print $1}')"
+elif command -v shasum >/dev/null 2>&1; then
+  actual="$(shasum -a 256 "$archive" | awk '{print $1}')"
+else
+  echo "需要 sha256sum 或 shasum 才能核对 Luban 压缩包。" >&2
+  exit 1
+fi
+if [[ -z "$actual" || "$actual" != "$expected" ]]; then
+  echo "Luban 压缩包校验失败：期望 $expected，实际 ${actual:-<空>}" >&2
   exit 1
 fi
 

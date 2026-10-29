@@ -78,7 +78,7 @@ Sdk 固定 `Godot.NET.Sdk/4.7.2`。改成别的字符串，编辑器会重写 cs
 - Godot 服务有没有真跑起来：改 `samples/DemoGame` 的 `AdapterSmoke`、`GameRoot`、场景。
 - `Sdk` 字符串和 `SlimDemoGameEditorBuild` 的判定位置保持不动，除非 PR 专门改编辑器兼容，并在 Godot 4.7.2 里打开工程验证编辑器没有重写 csproj。
 
-Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `DemoGame`，也不进 `src/`。`SlimFramework.Demo` 里现有的 `DemoSession` / `DemoPlugin` 是用法样例，不是第二款游戏。
+Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `DemoGame`，也不进 `src/`。`SlimFramework.Demo` 里现有的 `DemoSession` / `DemoPlugin` 是用法样例，不是第二款游戏。新游戏是单独的仓库，起点是 [../samples/EmptyGame/README.md](../samples/EmptyGame/README.md)。不要把玩法补进 `DemoGame`。
 
 `GameRoot.OnAppReady` 先跑 `AdapterSmoke`，再跑 `DemoSession`。Play `Main.tscn` 的通过标准见 [../CONTRIBUTING.md](../CONTRIBUTING.md)。
 

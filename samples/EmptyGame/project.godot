@@ -1,0 +1,13 @@
+; 新游戏空壳。用 Godot 4.7.2 .NET 打开本目录的 project.godot。
+; 在 SlimFramework 仓库里时不要构建；先拷到自己的游戏仓库。见 README.md。
+config_version=5
+
+[application]
+
+config/name="Game"
+run/main_scene="res://Game/Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[dotnet]
+
+project/assembly_name="Game"

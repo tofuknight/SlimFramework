@@ -1,0 +1,16 @@
+# 构建时由 SlimFramework.Godot.targets 从适配层源文件拷出，不入库。
+SlimFramework.Scripts/
+
+# Godot 4
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# .NET
+.mono/
+**/bin/
+**/obj/
+*.user
+*.csproj.user

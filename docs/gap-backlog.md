@@ -8,14 +8,6 @@
 
 按下面的顺序，一项一个 PR。
 
-### 1. AdapterSmoke 补上 `PlayUi` 和 `FromGodotRes`
-
-`samples/DemoGame/AdapterSmoke.cs` 现在覆盖：`IUiStack` 打开 / `CloseTop`、三条总线的音量偏好、`user://` 存档往返。
-
-它没有调用 `IAudio.PlayUi`，也没有调用 `GodotTableFiles.FromGodotRes`。无头 `DemoSession` 用假 `IAudio` 数过 `PlayUi` 次数，不证明 Godot 的 UI 总线。`AudioBus.Ui` 的音量断言也不能代替一次播放。
-
-补法：在 `AdapterSmoke` 里对 UI 总线实际播一次，并用 `FromGodotRes` 经 `FileAccess` 读一张 `res://` 下的 `.bytes`。完成标准是 Play `Main.tscn` 仍打出 CONTRIBUTING 里的两行 OK。不要把这张表生成进 `src/SlimFramework`。
-
 ### 4. 插件脚手架加一个延后功能
 
 `plugins/` 还没有 csproj。按 [extension-rules.md](extension-rules.md) 的脚手架加一个类库，并只带一个延后功能当例子。例子用点外部关闭。

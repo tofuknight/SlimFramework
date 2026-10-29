@@ -1,3 +1,4 @@
+using cfg;
 using Godot;
 using SlimFramework.Audio;
 using SlimFramework.Demo;
@@ -9,12 +10,22 @@ using SlimFramework.UI;
 namespace SlimFramework.DemoGame;
 
 /// <summary>
-/// 走 Bootstrap 已经挂上的 Godot 服务：UI 打开、音量偏好、user:// 存档往返。
+/// 走 Bootstrap 已经挂上的 Godot 服务：UI 打开、UI 总线 <see cref="IAudio.PlayUi"/>、
+/// 音量偏好、<c>res://</c> 表经 <see cref="GodotTableFiles.FromGodotRes"/>、user:// 存档往返。
 /// 无头 Runner 不进这里。
 /// </summary>
 internal static class AdapterSmoke
 {
     public const string PagePath = "res://SmokePage.tscn";
+
+    /// <summary>短静音 WAV。Godot 导入成 <c>AudioStream</c> 后才能 <see cref="IAudio.PlayUi"/>。</summary>
+    public const string UiClickPath = "res://ui-click.wav";
+
+    /// <summary>
+    /// 与 <c>samples/SlimFramework.Demo/Fixtures/tbitem.bytes</c> 同一份手写表。
+    /// 不生成进 <c>src/SlimFramework</c>。
+    /// </summary>
+    public const string TableDirectory = "res://Config";
 
     public static void Run(SlimApp app, DemoPlugin plugin)
     {
@@ -49,6 +60,9 @@ internal static class AdapterSmoke
         ExpectVolume(audio, AudioBus.Music, 0.25f);
         ExpectVolume(audio, AudioBus.Sfx, 0.5f);
         ExpectVolume(audio, AudioBus.Ui, 0.75f);
+        audio.PlayUi(UiClickPath);
+        ExpectPlayingOnUiBus();
+        ExpectSampleTable();
 
         var reread = new PreferenceStore(new GodotUserTextStore(GodotUserTextStore.DefaultRelativePath));
         reread.Load();
@@ -84,5 +98,41 @@ internal static class AdapterSmoke
     {
         if (Math.Abs(audio.GetVolume(bus) - expected) > 0.0001f)
             throw new InvalidOperationException($"{bus} 音量不是 {expected}。");
+    }
+
+    private static void ExpectPlayingOnUiBus()
+    {
+        if (AudioServer.GetBusIndex(GodotAudio.BusUi) < 0)
+            throw new InvalidOperationException("AudioServer 上没有 UI 总线。");
+        if (Engine.GetMainLoop() is not SceneTree tree)
+            throw new InvalidOperationException("没有 SceneTree，无法确认 PlayUi。");
+
+        var found = 0;
+        CountPlayingUiPlayers(tree.Root, ref found);
+        if (found != 1)
+            throw new InvalidOperationException($"PlayUi 应在 UI 总线上留下 1 个正在播放的播放器，实际 {found}。");
+    }
+
+    private static void CountPlayingUiPlayers(Node node, ref int found)
+    {
+        if (node is AudioStreamPlayer player
+            && player.Bus == GodotAudio.BusUi
+            && player.Stream != null
+            && player.Playing)
+            found++;
+
+        foreach (var child in node.GetChildren())
+            CountPlayingUiPlayers(child, ref found);
+    }
+
+    private static void ExpectSampleTable()
+    {
+        var tables = new Tables(GodotTableFiles.FromGodotRes(TableDirectory));
+        var potion = tables.TbItem.Get(1);
+        var key = tables.TbItem.Get(2);
+        if (potion.Name != "potion" || potion.Desc != "heal" || potion.Count != 3)
+            throw new InvalidOperationException("FromGodotRes 没有读到 potion。");
+        if (key.Name != "key" || key.Count != 1 || tables.TbItem.DataList.Count != 2)
+            throw new InvalidOperationException("FromGodotRes 没有读到 key。");
     }
 }

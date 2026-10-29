@@ -34,6 +34,8 @@ var tables = new cfg.Tables(GodotTableFiles.FromGodotRes("res://Config"));
 
 `FromGodotRes` 走 `FileAccess`，目录必须是 `res://`，文件名仍是 `{表名}.bytes`。
 
+`samples/DemoGame/AdapterSmoke` 对 `res://Config` 调一次 `FromGodotRes`，读的是手写示例 `tbitem.bytes`（与 `samples/SlimFramework.Demo/Fixtures/tbitem.bytes` 相同）。不要把这张表生成进 `src/SlimFramework`。
+
 ## 怎么生成
 
 CLI 锁在本仓库，游戏不要再自己挑小版本。

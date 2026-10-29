@@ -56,6 +56,8 @@ tools/Luban/generate.sh \
 
 以游戏自己的 `luban.conf` 为准。不要把输出目录指到 `src/SlimFramework`。
 
+CI（`.github/workflows/ci.yml`）不跑本脚本：仓库里没有 `luban.conf`，示例表是手写的。无参数调用会先做 sha256（依赖 `sha256sum`，macOS 默认没有），需要解压时还要 `7z`。校验和解压都通过后，以退出码 2 结束。pin、提交范围、以及这项缺口见 [architecture.md](architecture.md) 和 [gap-backlog.md](gap-backlog.md)。
+
 生成后的 `Tables` 会 `loader("表名")`。保证 `outputDataDir` 下的文件名是 `{表名}.bytes`。
 
 升级 Luban 运行时：整组替换 `External/Luban` 下的四个文件，同时换 `third_party/Luban` 里同一代的 CLI 和 `luban.lock`，再跑 `dotnet run --project samples/SlimFramework.Demo.Runner`。Runner 会用 `ByteBuf` 重编码样例并和 `tbitem.bytes` 对比。

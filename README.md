@@ -31,6 +31,8 @@ License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NO
 
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
 
+Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md`, `docs/gap-backlog.md`. Do not push `main`. Framework API, layering, Godot adapter, save format, and Luban pin changes need a PR plus Forge architecture review. Godot-touching changes also need a local AdapterSmoke pass: Play `samples/DemoGame` `Main.tscn` must print `SlimFramework Godot adapter smoke OK` and `SlimFramework DemoSession OK`, and must not double-register in `ScriptTypeBiMap`.
+
 # SlimFramework
 
 轻量 Godot 4 / C# 游戏框架。给独立游戏用：模块生命周期、事件、流程、存档信封、偏好、资源目录、Luban 表加载，以及一层薄的 Godot 适配。
@@ -73,7 +75,8 @@ tools/Slim.SaveTool            只依赖契约的存档信封工具
 tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
 plugins/                       以后放插件工程
-docs/                          架构、Luban、Protobuf
+docs/                          分层、扩展规则、缺口、Luban、Protobuf
+CONTRIBUTING.md                贡献方式与合并门禁
 .github/workflows/ci.yml       Release 构建和无头 Demo
 ```
 
@@ -145,6 +148,6 @@ Bootstrap="*res://Game/GameRoot.cs"
 
 保留了模块、帧更新、事件、流程、存档参与者、资源引用、UI 层、Node 单例这些用途，但组合根改成显式的 `SlimApp`，不再用反射单例当服务定位器。Godot API 只出现在 `SlimFramework.Godot`。核心可以在没有编辑器的进程里跑（Demo Runner 就是这样）。
 
-刻意没搬过来的东西：异步分帧卸载、BGM 交叉淡化、弹窗点外部关闭。需要时在适配层加，不要加回核心。
+刻意没搬过来的东西：异步分帧卸载、BGM 交叉淡化、弹窗点外部关闭、更完整的 UI 生命周期。这些进 `plugins/`，不进核心。见 [docs/extension-rules.md](docs/extension-rules.md)。
 
-更细的类型地图见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+分层、双 SDK、Luban / Protobuf 放哪，以及类型落点：[docs/architecture.md](docs/architecture.md)。贡献和合并门禁：[CONTRIBUTING.md](CONTRIBUTING.md)。缺口：[docs/gap-backlog.md](docs/gap-backlog.md)。

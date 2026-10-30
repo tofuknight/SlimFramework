@@ -33,6 +33,8 @@ License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NO
 
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
 
+`samples/EmptyGame` is a copy-out shell for a new game repository (submodule consumer). It is not in `SlimFramework.sln`. Do not build it inside this repo, and do not put gameplay in `samples/DemoGame`. Do not add a `ProjectReference` from `src/`, `plugins/`, or `tools/` to `samples/EmptyGame`.
+
 Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md`, `docs/gap-backlog.md`. Do not push `main`. Framework API, layering, Godot adapter, save format, and Luban pin changes need a PR plus Forge architecture review. Godot-touching changes also need a local AdapterSmoke pass: Play `samples/DemoGame` `Main.tscn` must print `SlimFramework Godot adapter smoke OK` and `SlimFramework DemoSession OK`, and must not double-register in `ScriptTypeBiMap`.
 
 # SlimFramework
@@ -73,6 +75,7 @@ src/SlimFramework.Godot        Godot 适配（程序集名 SlimFramework.Godot�
 samples/SlimFramework.Demo     示例游戏逻辑，不引用 Godot
 samples/SlimFramework.Demo.Runner
 samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适配，再跑 DemoSession
+samples/EmptyGame              新游戏空壳。拷到单独的仓库再用，不进解决方案，不放玩法
 tools/Slim.SaveTool            只依赖契约的存档信封工具
 tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
@@ -83,6 +86,8 @@ CONTRIBUTING.md                贡献方式与合并门禁
 ```
 
 ## 接到自己的游戏
+
+清单和可拷贝的空壳在 [samples/EmptyGame/README.md](samples/EmptyGame/README.md)。空壳不进 `SlimFramework.sln`。玩法留在那个游戏仓库里，不要写进 `samples/DemoGame`。
 
 ### 子模块
 

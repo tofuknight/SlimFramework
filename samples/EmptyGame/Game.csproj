@@ -1,0 +1,21 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!--
+    新游戏空壳。用 Godot 4.7.2 .NET 打开本目录的 project.godot。
+    Sdk 保持 Godot.NET.Sdk/4.7.2。改掉的话编辑器会重写本文件。
+    不要把本文件加进 SlimFramework.sln，也不要在框架仓库里构建。
+    子模块、Compile Remove、脚本暂存见 README.md。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Game</RootNamespace>
+    <AssemblyName>Game</AssemblyName>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="third_party/SlimFramework/src/SlimFramework.Godot/build/SlimFramework.Godot.targets" />
+  <ItemGroup>
+    <ProjectReference Include="third_party/SlimFramework/src/SlimFramework.Godot/SlimFramework.Godot.csproj" />
+    <Compile Remove="third_party/**" />
+  </ItemGroup>
+</Project>

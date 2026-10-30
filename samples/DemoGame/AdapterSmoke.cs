@@ -10,7 +10,7 @@ using SlimFramework.UI;
 namespace SlimFramework.DemoGame;
 
 /// <summary>
-/// 走 Bootstrap 已经挂上的 Godot 服务：UI 打开、UI 总线 <see cref="IAudio.PlayUi"/>、
+/// 走 Bootstrap 已经挂上的 Godot 服务：UI 打开、Music / SFX / UI 总线上的实际播放、
 /// 音量偏好、<c>res://</c> 表经 <see cref="GodotTableFiles.FromGodotRes"/>、user:// 存档往返。
 /// 无头 Runner 不进这里。
 /// </summary>
@@ -18,7 +18,10 @@ internal static class AdapterSmoke
 {
     public const string PagePath = "res://SmokePage.tscn";
 
-    /// <summary>短静音 WAV。Godot 导入成 <c>AudioStream</c> 后才能 <see cref="IAudio.PlayUi"/>。</summary>
+    /// <summary>
+    /// 短静音 WAV。Godot 导入成 <c>AudioStream</c> 后，
+    /// <see cref="IAudio.PlayUi"/>、<see cref="IAudio.PlaySfx"/>、<see cref="IAudio.PlayMusic"/> 都用它。
+    /// </summary>
     public const string UiClickPath = "res://ui-click.wav";
 
     /// <summary>
@@ -61,7 +64,11 @@ internal static class AdapterSmoke
         ExpectVolume(audio, AudioBus.Sfx, 0.5f);
         ExpectVolume(audio, AudioBus.Ui, 0.75f);
         audio.PlayUi(UiClickPath);
-        ExpectPlayingOnUiBus();
+        ExpectPlaying(GodotAudio.BusUi, 1, "PlayUi");
+        audio.PlayMusic(UiClickPath);
+        ExpectPlaying(GodotAudio.BusMusic, 1, "PlayMusic");
+        audio.PlaySfx(UiClickPath);
+        ExpectPlaying(GodotAudio.BusSfx, 1, "PlaySfx");
         ExpectSampleTable();
 
         var reread = new PreferenceStore(new GodotUserTextStore(GodotUserTextStore.DefaultRelativePath));
@@ -100,29 +107,29 @@ internal static class AdapterSmoke
             throw new InvalidOperationException($"{bus} 音量不是 {expected}。");
     }
 
-    private static void ExpectPlayingOnUiBus()
+    private static void ExpectPlaying(string bus, int expected, string call)
     {
-        if (AudioServer.GetBusIndex(GodotAudio.BusUi) < 0)
-            throw new InvalidOperationException("AudioServer 上没有 UI 总线。");
+        if (AudioServer.GetBusIndex(bus) < 0)
+            throw new InvalidOperationException($"AudioServer 上没有 {bus} 总线。");
         if (Engine.GetMainLoop() is not SceneTree tree)
-            throw new InvalidOperationException("没有 SceneTree，无法确认 PlayUi。");
+            throw new InvalidOperationException($"没有 SceneTree，无法确认 {call}。");
 
         var found = 0;
-        CountPlayingUiPlayers(tree.Root, ref found);
-        if (found != 1)
-            throw new InvalidOperationException($"PlayUi 应在 UI 总线上留下 1 个正在播放的播放器，实际 {found}。");
+        CountPlaying(tree.Root, bus, ref found);
+        if (found != expected)
+            throw new InvalidOperationException($"{call} 应在 {bus} 总线上留下 {expected} 个正在播放的播放器，实际 {found}。");
     }
 
-    private static void CountPlayingUiPlayers(Node node, ref int found)
+    private static void CountPlaying(Node node, string bus, ref int found)
     {
         if (node is AudioStreamPlayer player
-            && player.Bus == GodotAudio.BusUi
+            && player.Bus == bus
             && player.Stream != null
             && player.Playing)
             found++;
 
         foreach (var child in node.GetChildren())
-            CountPlayingUiPlayers(child, ref found);
+            CountPlaying(child, bus, ref found);
     }
 
     private static void ExpectSampleTable()

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.UiLifecycle</RootNamespace>
+    <Description>可选 UI 覆盖/恢复回调。由游戏 Use，不进 SlimBootstrap 默认列表。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework\SlimFramework.csproj" />
+    <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
+  </ItemGroup>
+</Project>

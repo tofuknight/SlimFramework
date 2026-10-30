@@ -4,7 +4,7 @@
 
 - [docs/architecture.md](docs/architecture.md) — 程序集分层、`DemoGame` 双 SDK、Luban / Protobuf 放哪
 - [docs/extension-rules.md](docs/extension-rules.md) — 插件、延后功能、Godot 脚本暂存、禁止向上依赖
-- [docs/gap-backlog.md](docs/gap-backlog.md) — 现在补的缺口，以及明确不做的东西
+- [docs/gap-backlog.md](docs/gap-backlog.md) — P1 已清掉；P2、明确不做、触发才做
 - [docs/LUBAN.md](docs/LUBAN.md)、[docs/PROTOBUF.md](docs/PROTOBUF.md) — 生成步骤和契约字段
 
 代码和这些文档不一致：不合。服从文档，或在同一次 PR 里改文档并走对应审阅。

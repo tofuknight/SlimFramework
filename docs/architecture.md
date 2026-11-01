@@ -27,7 +27,7 @@ tools/*           →  SlimFramework.Contracts（不需要 Godot 时可以 → S
 
 Framework、Plugins、Tools 禁止引用 Game。包括 `DemoGame` 和以后任何一个游戏工程。游戏可以向下引用框架。
 
-公开入口是 `SlimApp`。模块实现 `IModule`。插件实现 `IPlugin`，游戏用 `SlimApp.Use` 接上。Godot 游戏继承 `SlimBootstrap`。
+公开入口是 `SlimApp`。模块实现 `IModule`。插件实现 `IPlugin`，游戏用 `SlimApp.Use` 接上。Godot 游戏继承 `SlimBootstrap`。默认能力、可选插件、留在游戏里的部分见文末「全局能力地图」。
 
 ### MSBuild 怎么拦住向上引用
 
@@ -133,3 +133,68 @@ Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `
 适配类型：`SlimBootstrap`、`GodotAssetLoader`、`GodotAudio`、`GodotUiStack`、`IUiPage`、`UiPage`、`NodeSingleton<T>`、`GodotUserSaveStore`、`GodotUserTextStore`、`GodotTableFiles`、`GodotPauseSink`。其中 `SlimBootstrap` 和 `UiPage` 的编译位置见 [extension-rules.md](extension-rules.md)。`GodotUiStack` 另有可选事件 `PagePresented` / `PageDismissed`。没有订阅者时，打开和关闭不变。点外部关闭插件见 [extension-rules.md](extension-rules.md)。
 
 `SlimApp` 是组合根。`Add` 在 `Init` 之前，关闭顺序相反。`Use` 在 `Init` 之前。`TickFrame` 驱动每个 `ITickable`。`SlimApp.Current` 只由 `SlimApp.Mount` 设置。每种具体类型、每个框架接口（`IAudio`、`IUiStack`、`IAssetLoader` 等）只有一个实例。`IModule` / `ITickable` 不是服务键。模块在主线程用，内部不加锁。
+
+## 全局能力地图
+
+打开文档先看这里：默认有哪些全局能力、用 `SlimApp.Get<T>` 怎么取、哪些要游戏 `Use(IPlugin)` 才出现、哪些留在游戏里。下文对应当前 `SlimBootstrap.Configure` 和 `plugins/` 里的 `Id`。
+
+### 组合根怎么用
+
+`SlimApp` 是组合根。游戏和插件依赖它；它不依赖游戏，也不依赖 Godot。
+
+- `Add` 在 `Init` 之前。`Init` 之后再 `Add` 会抛 `InvalidOperationException`。
+- `Use(IPlugin)` 在 `Init` 之前。`Register` 里再 `Add` 模块，或向已经 `Add` 的服务登记扩展。`Id` 不能为空。
+- 取用是 `Get<T>()` / `TryGet<T>()`。`Add` 登记具体类型，以及除 `IModule`、`ITickable`、`IDisposable` 以外的接口。每种具体类型、每个这样的接口只有一个实例。
+- `SlimApp.Current` 在 `SlimApp.Mount` 之后才有。`Dispose` 时 `Unmount`。
+
+Godot 入口继承 `SlimBootstrap`，重写 `Configure`：先 `base.Configure(app)`，再 `Use` 插件。`_Ready` 的顺序是 `Configure` → `Init` → `AudioPreferences.Apply` → `Mount` → `OnAppReady`。节点脚本用 `SlimApp.Current` 取服务。
+
+```csharp
+public partial class GameRoot : SlimBootstrap
+{
+    protected override void Configure(SlimApp app)
+    {
+        base.Configure(app);
+        app.Use(new MyGamePlugin());
+    }
+}
+```
+
+### 默认已挂
+
+`SlimBootstrap.Configure` 挂上下表。`EventBus` 在构造 `SlimApp` 时就有，不经过 `Add`。`AudioPreferences.Apply` 在 `Init` 之后由 `_Ready` 调用，不是一项 `Add`。
+
+| 能力 | 取用接口/类型 | 实现（适配） | 备注 |
+| --- | --- | --- | --- |
+| 资源加载 | `IAssetLoader` | `GodotAssetLoader` | 同步 `Load` / `Release`。也可 `Get<GodotAssetLoader>()`。路径接受 `res://` 与 `uid://` |
+| 存档 | `SaveService` | `SaveService` + `GodotUserSaveStore` | 槽位 `user://saves/slot_000.sav`。`ISaveStore` 不单独注册 |
+| 偏好 | `PreferenceStore` | `PreferenceStore` + `GodotUserTextStore` | 文本 `user://prefs.json`（`GodotUserTextStore.DefaultRelativePath`）。`ITextStore` 不单独注册 |
+| 流程 | `FlowMachine` | `FlowMachine` + `GodotPauseSink` | 暂停写到 `SceneTree.Paused`。`IPauseSink` 不单独注册。切换时经 `Events` 发布 `FlowChanged` |
+| 音频 | `IAudio` | `GodotAudio` | `Music` / `Sfx` / `Ui`。也可 `Get<GodotAudio>()` |
+| UI 栈 | `IUiStack` | `GodotUiStack` | `Open` / `CloseTop`。也可 `Get<GodotUiStack>()`。`PagePresented` / `PageDismissed` 没有订阅者时，打开和关闭不变 |
+| 事件 | `SlimApp.Events` | `EventBus` | 不走 `Add`，也不是 `Get<EventBus>()`。`Subscribe<T>` / `Publish<T>`，载荷实现 `IEvent` |
+| 音量套用 | `AudioPreferences.Apply` | 静态方法 | `_Ready` 在 `Init` 之后、`Mount` 之前调用。读 `PreferenceStore` 的 `audio.music` / `audio.sfx` / `audio.ui`，写到 `IAudio`。缺键或解析失败保持当前音量，不写回偏好 |
+
+### 插件可选
+
+游戏在 `GameRoot.Configure` 里、`base.Configure` 之后 `Use`。禁止把这些插件写进 `SlimBootstrap.Configure` 的默认列表。`main` 上 `plugins/` 只有下面三个。`samples/SlimFramework.Demo` 的 `DemoPlugin`（`Id` 为 `demo`）是无头用法样例，不在此表，也不进默认列表。
+
+没 `Use` 的插件不改变核心行为：资源仍是同步 `Load` / `Release`，页面仍只有打开和关闭，点在页面矩形外不会 `CloseTop`。
+
+| 插件 | Id | 程序集路径 | 提供什么 | 取用方式 |
+| --- | --- | --- | --- | --- |
+| `ClickOutsideClosePlugin` | `click-outside-close` | `plugins/ClickOutsideClose/ClickOutsideClose.csproj` | 指针在栈顶页面矩形外按下时调用 `IUiStack.CloseTop` | `app.Use(new ClickOutsideClosePlugin())`。需要已经 `Add` 的 `GodotUiStack`。模块是 `internal`，没有 `Get` 键 |
+| `AsyncAssetsPlugin` | `async-assets` | `plugins/AsyncAssets/AsyncAssets.csproj` | 后台加载 `AsyncAssetLoader`，分帧释放 `ReleaseQueue`（默认每帧 8 次） | `app.Use(new AsyncAssetsPlugin())`。`Get<AsyncAssetLoader>()`、`Get<ReleaseQueue>()`。需要已经 `Add` 的 `GodotAssetLoader` |
+| `UiLifecyclePlugin` | `ui-lifecycle` | `plugins/UiLifecycle/UiLifecycle.csproj` | 页面被盖住 / 重新成为栈顶时 `IUiPageLifecycle.OnCovered` / `OnRevealed`。栈顶按打开顺序，与 `CloseTop` 一致 | `app.Use(new UiLifecyclePlugin())`。`Get<UiLifecycleModule>()`。页面可选实现 `IUiPageLifecycle`。需要已经 `Add` 的 `GodotUiStack` |
+
+### 明确不进框架
+
+- DI 容器、Manager 集合、MVVM
+- 玩法系统：关卡、战斗、背包、任务、剧情
+- 表生成物、玩法 proto（留在游戏工程；框架 protobuf 只有 `SaveSlot`、`ResourceRefCatalog`）
+
+见 [gap-backlog.md](gap-backlog.md)「明确不做」。
+
+### 和 QFramework Architecture 的对应
+
+要的是能力清单这一层清楚。对应关系：`Architecture` ≈ `SlimApp`，`RegisterSystem` ≈ `Add` / `Use`，`GetSystem` ≈ `Get<T>`。框架不引入 `Architecture`、`Command`、`Query`、`BindableProperty`，也不另做一套静态注册表。

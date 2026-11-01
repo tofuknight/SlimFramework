@@ -2,7 +2,7 @@
 
 产品是库。游戏代码留在游戏工程。本文是合入 `main` 的门禁；分层、插件、脚本暂存、缺口的细则在：
 
-- [docs/architecture.md](docs/architecture.md) — 程序集分层、`DemoGame` 双 SDK、Luban / Protobuf 放哪
+- [docs/architecture.md](docs/architecture.md) — 程序集分层、`DemoGame` 双 SDK、Luban / Protobuf 放哪、全局能力地图
 - [docs/extension-rules.md](docs/extension-rules.md) — 插件、延后功能、Godot 脚本暂存、禁止向上依赖
 - [docs/gap-backlog.md](docs/gap-backlog.md) — P1 已清掉；P2、明确不做、触发才做
 - [docs/LUBAN.md](docs/LUBAN.md)、[docs/PROTOBUF.md](docs/PROTOBUF.md) — 生成步骤和契约字段

@@ -10,6 +10,7 @@
 
 - [ ] 新建空的游戏仓库。把本目录里的文件放到那个仓库的根（包含 `project.godot`、`Game.csproj`、`Game.sln`、`Game/`、`.gitignore`）。本 README 可以留下当第一次的说明，也可以换成游戏自己的文档。
 - [ ] 在游戏仓库根执行 `git submodule add https://github.com/tofuknight/SlimFramework.git third_party/SlimFramework`。框架仓库根本身不要当 Godot 工程打开。
+- [ ] 子模块就位后先读「全局能力地图」：本仓库内是 [docs/architecture.md](../../docs/architecture.md)，拷出的游戏仓库里是 `third_party/SlimFramework/docs/architecture.md`。默认能力用 `SlimApp.Get<T>`；可选插件在 `base.Configure` 之后 `Use`；没 `Use` 则核心行为不变。
 - [ ] 用 Godot **4.7.2 .NET** 打开游戏仓库根的 `project.godot`。需要 .NET SDK 8。
 - [ ] `Game.csproj` 保持 `Sdk="Godot.NET.Sdk/4.7.2"`。有这三行，且路径指向子模块：`Import` `SlimFramework.Godot.targets`、`ProjectReference` `SlimFramework.Godot.csproj`、`Compile Remove="third_party/**"`。少了 `Import`，编辑器 Play 会把 `SlimBootstrap` 登记两次。少了 `Compile Remove`，子模块躺在游戏目录里时，Godot.NET.Sdk 会把框架的 `.cs` 再编一遍。
 - [ ] `.gitignore` 忽略 `SlimFramework.Scripts/`。那是构建时从适配层源文件拷出来的，不入库。
@@ -39,4 +40,4 @@
 - 不把 `samples/SlimFramework.Demo` 引用进游戏。那是无头用法样例，不是第二款游戏。
 - 不为了这个空壳去改 `DemoGame` 的双 SDK 开关。那个开关只服务本仓库的无编辑器 CI。你的游戏用编辑器打开，保持上面的 Sdk 即可。
 
-可选：点外部关闭在 `plugins/ClickOutsideClose`。需要时再 `ProjectReference` `third_party/SlimFramework/plugins/ClickOutsideClose/ClickOutsideClose.csproj`，并在 `base.Configure` 之后 `Use`。`SlimBootstrap.Configure` 不 `Use` 它。空壳不预置这个引用。
+可选插件见「全局能力地图」。点外部关闭在 `plugins/ClickOutsideClose`。需要时再 `ProjectReference` `third_party/SlimFramework/plugins/ClickOutsideClose/ClickOutsideClose.csproj`，并在 `base.Configure` 之后 `Use`。`SlimBootstrap.Configure` 不 `Use` 它。空壳不预置这个引用。

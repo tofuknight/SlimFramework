@@ -1,6 +1,6 @@
 # 缺口
 
-P1 的四项已经清掉，不再是待办。下面的 P2 是脚手架落地之后的插件，不是还没做完的 P1。禁止把还没落地的行为写成已经有。明确不做的项不要开任务。
+P1 的四项已经清掉，不再是待办。P2 是脚手架落地之后的插件（不是还没做完的 P1）；其中异步加载与 UI 生命周期已合入，只剩 BGM 交叉淡化还开着。禁止把还没落地的行为写成已经有。明确不做的项不要开任务。
 
 规则正文在 [architecture.md](architecture.md)、[extension-rules.md](extension-rules.md)、[../CONTRIBUTING.md](../CONTRIBUTING.md)。
 
@@ -17,11 +17,16 @@ P1 的四项已经清掉，不再是待办。下面的 P2 是脚手架落地之�
 
 ## P2 及以后
 
-脚手架落地之后，一项一个插件 PR：
+脚手架落地之后，一项一个插件 PR。下面两项已合入 `main`，只留落点，不再当开放工作。
 
-- 异步加载、分帧卸载
+| 内容 | 落点 |
+| --- | --- |
+| 异步加载、分帧卸载 | `plugins/AsyncAssets`（#11）。Id `async-assets` |
+| 比 `IUiPage.OnOpen` / `OnClose` 更完整的 UI 生命周期 | `plugins/UiLifecycle`（#12）。Id `ui-lifecycle` |
+
+还开着的：
+
 - BGM 交叉淡化
-- 比 `IUiPage.OnOpen` / `OnClose` 更完整的 UI 生命周期
 
 可选加固，不是功能：`GuardFrameworkDoesNotReferenceGame` 的条件加上路径子串 `plugin`，让 `src/` 引用 `plugins/` 时构建失败。加上之前，审阅已经按 [extension-rules.md](extension-rules.md) 拒绝这种引用。
 

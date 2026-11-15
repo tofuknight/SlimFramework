@@ -23,6 +23,7 @@ tools/*           →  SlimFramework.Contracts（不需要 Godot 时可以 → S
 | `SlimFramework.Demo` | `samples/SlimFramework.Demo` | `SlimFramework`、Contracts | `GodotSharp`、`SlimFramework.Godot`、`DemoGame` |
 | `SlimFramework.DemoGame` | `samples/DemoGame` | 适配层、`SlimFramework.Demo`、可选插件 | 被 `src/`、`plugins/`、`tools/` 引用 |
 | `Slim.SaveTool` | `tools/Slim.SaveTool` | Contracts | Demo、游戏、适配层 |
+| `Slim.AssetCatalogTool` | `tools/Slim.AssetCatalogTool` | Contracts、`SlimFramework`（调用 `ResourceCatalog.Parse`） | Demo、游戏、适配层、`plugins/` |
 | 插件 | `plugins/<Name>/` | `SlimFramework`，需要引擎类型时再加适配层 | `samples/`、任何游戏工程 |
 
 `SlimFramework` 不得引用 `GodotSharp`。引擎类型只在 `SlimFramework.Godot`，命名空间 `SlimFramework.GodotAdapter`。
@@ -119,6 +120,8 @@ Demo 只证明框架。关卡、剧情、正式 UI 皮肤、玩法系统不进 `
 
 游戏 message 作为 `ISaveContributor` 的一段字节放进信封。框架代码看不到具体 message 类型。
 
+资源目录的清单归游戏。CI 对 `samples/DemoGame/Assets/resource_refs.json` 跑 `tools/Slim.AssetCatalogTool generate`（带 `--project samples/DemoGame`），并与已提交的 `resource_refs.bytes`、`AssetKeys.cs` 逐字节比较。这不是 Luban，也不改 Luban pin。字段和 DisplayKey 见 [PROTOBUF.md](PROTOBUF.md)。
+
 ## 代码放哪
 
 | 任务 | 位置 |
@@ -168,7 +171,7 @@ public partial class GameRoot : SlimBootstrap
 
 | 能力 | 取用接口/类型 | 实现（适配） | 备注 |
 | --- | --- | --- | --- |
-| 资源加载 | `IAssetLoader` | `GodotAssetLoader` | 同步 `Load` / `Release`。也可 `Get<GodotAssetLoader>()`。路径接受 `res://` 与 `uid://` |
+| 资源加载 | `IAssetLoader` | `GodotAssetLoader` | 同步 `Load` / `Release`。也可 `Get<GodotAssetLoader>()`。路径接受 `res://` 与 `uid://`。游戏自己持有 `ResourceRefCatalog` 字节：`ResourceCatalog.TryGet(int)` 按 `ref_key`（运行时和存档身份），`TryGet(string)` 按 DisplayKey（字段 `constant`）。按名字加载是 `ResourceRefLoader`。清单和 key 归游戏，生成工具是 `Slim.AssetCatalogTool` |
 | 存档 | `SaveService` | `SaveService` + `GodotUserSaveStore` | 槽位 `user://saves/slot_000.sav`。`ISaveStore` 不单独注册 |
 | 偏好 | `PreferenceStore` | `PreferenceStore` + `GodotUserTextStore` | 文本 `user://prefs.json`（`GodotUserTextStore.DefaultRelativePath`）。`ITextStore` 不单独注册 |
 | 流程 | `FlowMachine` | `FlowMachine` + `GodotPauseSink` | 暂停写到 `SceneTree.Paused`。`IPauseSink` 不单独注册。切换时经 `Events` 发布 `FlowChanged` |

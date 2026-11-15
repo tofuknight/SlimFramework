@@ -8,6 +8,7 @@ Dependency direction (enforced by `Directory.Build.targets` where noted):
 samples/DemoGame  →  SlimFramework.Demo  →  SlimFramework  →  SlimFramework.Contracts
                   →  SlimFramework.Godot →  SlimFramework
 tools/Slim.SaveTool → SlimFramework.Contracts
+tools/Slim.AssetCatalogTool → SlimFramework.Contracts, SlimFramework
 plugins/*           → SlimFramework (+ optional SlimFramework.Godot)
 ```
 
@@ -25,7 +26,7 @@ Sample table + save round-trip: `samples/SlimFramework.Demo/DemoSession.cs`.
 
 Build: `dotnet build SlimFramework.sln`. Headless proof: `dotnet run --project samples/SlimFramework.Demo.Runner`.
 
-CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release`, `dotnet run --project samples/SlimFramework.Demo.Runner`, then installs `p7zip-full` and runs `tools/Luban/generate.sh` with no arguments, expecting exit code 2. That call checks the Luban archive and prints usage. It does not generate tables. There is no `luban.conf` in this repo.
+CI (`.github/workflows/ci.yml`) runs `dotnet build SlimFramework.sln -c Release`, `dotnet run --project samples/SlimFramework.Demo.Runner`, then `tools/Slim.AssetCatalogTool generate` on `samples/DemoGame/Assets/resource_refs.json` and compares the output to the committed catalog bytes and `AssetKeys.cs`. It then installs `p7zip-full` and runs `tools/Luban/generate.sh` with no arguments, expecting exit code 2. That Luban call checks the archive and prints usage. It does not generate tables. There is no `luban.conf` in this repo.
 
 Luban CLI is pinned at `third_party/Luban` (4.12.0, not Luban 5). Generate with `tools/Luban/generate.sh`. Games do not pick their own CLI. Runtime stays `src/SlimFramework/External/Luban`.
 
@@ -37,7 +38,7 @@ License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NO
 
 `samples/EmptyGame` is a copy-out shell for a new game repository (submodule consumer). It is not in `SlimFramework.sln`. Do not build it inside this repo, and do not put gameplay in `samples/DemoGame`. Do not add a `ProjectReference` from `src/`, `plugins/`, or `tools/` to `samples/EmptyGame`.
 
-Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md`, `docs/gap-backlog.md`. Do not push `main`. Framework API, layering, Godot adapter, save format, and Luban pin changes need a PR plus Forge architecture review. Godot-touching changes also need a local AdapterSmoke pass: Play `samples/DemoGame` `Main.tscn` must print `SlimFramework Godot adapter smoke OK` and `SlimFramework DemoSession OK`, and must not double-register in `ScriptTypeBiMap`.
+Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md`, `docs/gap-backlog.md`. Do not push `main`. Framework API, layering, Godot adapter, save format, and Luban pin changes need a PR plus Forge architecture review. Godot-touching changes also need a local AdapterSmoke pass: Play `samples/DemoGame` `Main.tscn` must print `SlimFramework Godot adapter smoke OK`, `SlimFramework asset catalog smoke OK`, and `SlimFramework DemoSession OK`, and must not double-register in `ScriptTypeBiMap`.
 
 # SlimFramework
 
@@ -58,12 +59,18 @@ dotnet build SlimFramework.sln
 dotnet run --project samples/SlimFramework.Demo.Runner
 dotnet run --project tools/Slim.SaveTool -- pack /tmp/slot.sav night-1
 dotnet run --project tools/Slim.SaveTool -- unpack /tmp/slot.sav
+dotnet run --project tools/Slim.AssetCatalogTool -- generate samples/DemoGame/Assets/resource_refs.json \
+  --catalog samples/DemoGame/Assets/resource_refs.bytes \
+  --code samples/DemoGame/AssetKeys.cs \
+  --namespace SlimFramework.DemoGame \
+  --class AssetKeys \
+  --project samples/DemoGame
 tools/Luban/generate.sh -t client -c cs-bin -d bin --conf Data/luban.conf -x outputCodeDir=Game/Scripts/Config -x outputDataDir=Game/Resource/Config
 ```
 
-持续集成见 `.github/workflows/ci.yml`：`dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`，再安装 `p7zip-full` 并无参数执行 `tools/Luban/generate.sh`（期望退出码 2，只核对压缩包并打印用法，不生成表）。
+持续集成见 `.github/workflows/ci.yml`：`dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`，再对 `samples/DemoGame` 的资源清单跑 `Slim.AssetCatalogTool generate` 并与已提交的目录字节、`AssetKeys.cs` 比较，最后安装 `p7zip-full` 并无参数执行 `tools/Luban/generate.sh`（期望退出码 2，只核对压缩包并打印用法，不生成表）。
 
-`dotnet build` 不需要安装 Godot。Runner 会加载一张 Luban bin 表、用 protobuf 做一次存档往返，并走一遍流程 / 偏好 / 资源目录。
+`dotnet build` 不需要安装 Godot。Runner 会加载一张 Luban bin 表、用 protobuf 做一次存档往返，并走一遍流程 / 偏好 / 资源目录（含 DisplayKey 查找和非法目录拒绝）。
 
 `samples/DemoGame` 同一份 csproj 同时给命令行和 Godot 4.7.2 编辑器用。Sdk 保持 `Godot.NET.Sdk/4.7.2`；无编辑器时引用仓库里的 GodotSharp 包，编辑器构建（传入 `GodotTargetPlatform`）改用 SDK 自带引用。打开方式和开关见 [samples/DemoGame/README.md](samples/DemoGame/README.md)。
 
@@ -79,6 +86,7 @@ samples/SlimFramework.Demo.Runner
 samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适配，再跑 DemoSession
 samples/EmptyGame              新游戏空壳。拷到单独的仓库再用，不进解决方案，不放玩法
 tools/Slim.SaveTool            只依赖契约的存档信封工具
+tools/Slim.AssetCatalogTool    资源清单 → ResourceRefCatalog 字节 + DisplayKey 常量类
 tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
 plugins/                       可选插件（ClickOutsideClose、AsyncAssets、UiLifecycle）。游戏 Use，不进 SlimBootstrap 默认列表

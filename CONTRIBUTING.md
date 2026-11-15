@@ -28,10 +28,11 @@
 
 三条都要满足。CI 不能代替后两条。
 
-1. CI 绿。`.github/workflows/ci.yml` 在 `ubuntu-latest` 上执行 `dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`。SDK 见 `global.json`。
+1. CI 绿。`.github/workflows/ci.yml` 在 `ubuntu-latest` 上执行 `dotnet build SlimFramework.sln -c Release`，然后 `dotnet run --project samples/SlimFramework.Demo.Runner`，再跑 `Slim.AssetCatalogTool generate` 并与 `samples/DemoGame` 已提交的目录字节和 `AssetKeys.cs` 比较。SDK 见 `global.json`。
 2. 动了框架或分层：Forge 架构审阅通过。
 3. 动了 Godot：本地用 Godot 4.7.2 .NET 打开 `samples/DemoGame/project.godot`（不要打开仓库根），Play `Main.tscn`。必须打出这两行，且没有 `ScriptTypeBiMap` 重复登记：
    - `SlimFramework Godot adapter smoke OK`
+   - `SlimFramework asset catalog smoke OK`
    - `SlimFramework DemoSession OK`
 
 PR 描述写明第 2 条和第 3 条的结果。没动框架或分层，写「未改框架 / 分层，跳过 Forge 架构审阅」。没动 Godot，写「未触碰 Godot，跳过 AdapterSmoke」。
@@ -51,6 +52,14 @@ PR 描述写明第 2 条和第 3 条的结果。没动框架或分层，写「�
 ```bash
 dotnet build SlimFramework.sln -c Release
 dotnet run --project samples/SlimFramework.Demo.Runner
+dotnet run --project tools/Slim.AssetCatalogTool -c Release -- generate samples/DemoGame/Assets/resource_refs.json \
+  --catalog /tmp/resource_refs.bytes \
+  --code /tmp/AssetKeys.cs \
+  --namespace SlimFramework.DemoGame \
+  --class AssetKeys \
+  --project samples/DemoGame
+cmp /tmp/resource_refs.bytes samples/DemoGame/Assets/resource_refs.bytes
+cmp /tmp/AssetKeys.cs samples/DemoGame/AssetKeys.cs
 ```
 
 `dotnet build` 不需要安装 Godot。无头 Runner 不进编辑器，也不能代替 AdapterSmoke。

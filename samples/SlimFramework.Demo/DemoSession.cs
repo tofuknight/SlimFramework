@@ -141,6 +141,21 @@ public static class DemoSession
         if (tick.Frames != 2)
             throw new InvalidOperationException("Tick 未驱动模块。");
 
+        var entry = RunResourceCatalogChecks();
+
+        RunMigrationRegression(saves);
+
+        var mounted = SlimApp.Current;
+        app.Shutdown();
+        if (!ReferenceEquals(SlimApp.Current, mounted))
+            throw new InvalidOperationException("Demo 不应改写 SlimApp.Current。");
+
+        Console.WriteLine("SlimFramework demo OK");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"item={potion.Name} coins={plugin.State.Coins} ref={entry.Uid}"));
+    }
+
+    private static ResourceRefEntry RunResourceCatalogChecks()
+    {
         var catalogMessage = new ResourceRefCatalog();
         catalogMessage.Refs[7] = new ResourceRef
         {
@@ -162,19 +177,113 @@ public static class DemoSession
             throw new InvalidOperationException("非空 Uid 应作为加载地址。");
         if (!catalog.TryGet(8, out var pathOnly) || pathOnly.LoadKey != "res://path-only.svg")
             throw new InvalidOperationException("Uid 为空时应使用 Path。");
+        if (!catalog.TryGet("PotionIcon", out var byName) || byName.RefKey != 7 || byName.LoadKey != "uid://potion")
+            throw new InvalidOperationException("按 DisplayKey 查找失败。");
+        if (!catalog.TryGet("PathOnly", out var pathByName) || pathByName.RefKey != 8)
+            throw new InvalidOperationException("按 DisplayKey 查找 PathOnly 失败。");
+        if (catalog.TryGet("potionicon", out _) || catalog.TryGet("", out _) || catalog.TryGet(" ", out _) || catalog.TryGet("missing", out _))
+            throw new InvalidOperationException("DisplayKey 查找应区分大小写，并且空名字和缺名字都找不到。");
+
         var loader = new RecordingLoader();
         if (loader.Load<string>(entry) != "uid://potion" || loader.Load<string>(catalog, 8) != "res://path-only.svg")
             throw new InvalidOperationException("按资源引用加载没有走 LoadKey。");
+        if (loader.Load<string>(catalog, "PotionIcon") != "uid://potion"
+            || loader.Load<string>(catalog, "PathOnly") != "res://path-only.svg")
+            throw new InvalidOperationException("按 DisplayKey 加载没有走 LoadKey。");
+        ExpectMissingDisplayKey(() => loader.Load<string>(catalog, "MissingIcon"));
+        ExpectBlankDisplayKey(() => loader.Load<string>(catalog, " "));
 
-        RunMigrationRegression(saves);
+        var cases = new ResourceRefCatalog();
+        cases.Refs[1] = new ResourceRef { RefKey = 1, Constant = "Icon", Path = "res://a.svg" };
+        cases.Refs[2] = new ResourceRef { RefKey = 2, Constant = "icon", Path = "res://b.svg" };
+        var parsedCases = ResourceCatalog.Parse(cases.ToByteArray());
+        if (!parsedCases.TryGet("Icon", out var upper) || upper.RefKey != 1
+            || !parsedCases.TryGet("icon", out var lower) || lower.RefKey != 2)
+            throw new InvalidOperationException("DisplayKey 应按序数比较，不忽略大小写。");
 
-        var mounted = SlimApp.Current;
-        app.Shutdown();
-        if (!ReferenceEquals(SlimApp.Current, mounted))
-            throw new InvalidOperationException("Demo 不应改写 SlimApp.Current。");
+        var unnamed = new ResourceRefCatalog();
+        unnamed.Refs[1] = new ResourceRef { RefKey = 1, Path = "res://a.svg" };
+        unnamed.Refs[2] = new ResourceRef { RefKey = 2, Constant = "", Uid = "uid://b" };
+        var parsedUnnamed = ResourceCatalog.Parse(unnamed.ToByteArray());
+        if (parsedUnnamed.Count != 2 || parsedUnnamed.TryGet("", out _))
+            throw new InvalidOperationException("空 constant 应允许重复，且不能按空名字查到。");
+        if (!parsedUnnamed.TryGet(1, out var firstUnnamed) || firstUnnamed.Constant != "" || firstUnnamed.LoadKey != "res://a.svg")
+            throw new InvalidOperationException("空 constant 的条目应按 ref_key 取到 Path。");
+        if (!parsedUnnamed.TryGet(2, out var secondUnnamed) || secondUnnamed.LoadKey != "uid://b")
+            throw new InvalidOperationException("空 constant 且有 Uid 的条目应使用 Uid。");
 
-        Console.WriteLine("SlimFramework demo OK");
-        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"item={potion.Name} coins={plugin.State.Coins} ref={entry.Uid}"));
+        var spacedUid = new ResourceRefCatalog();
+        spacedUid.Refs[9] = new ResourceRef { RefKey = 9, Constant = "SpacedUid", Uid = "   ", Path = "res://spaced.svg" };
+        var parsedSpaced = ResourceCatalog.Parse(spacedUid.ToByteArray());
+        if (!parsedSpaced.TryGet("SpacedUid", out var spaced) || spaced.LoadKey != "res://spaced.svg")
+            throw new InvalidOperationException("空白 Uid 应视为没有 Uid，LoadKey 用 Path。");
+
+        var mismatch = new ResourceRefCatalog();
+        mismatch.Refs[1] = new ResourceRef { RefKey = 2, Constant = "Mismatch", Path = "res://mismatch.svg" };
+        ExpectCatalogRejected(mismatch, "不一致");
+
+        var duplicate = new ResourceRefCatalog();
+        duplicate.Refs[1] = new ResourceRef { RefKey = 1, Constant = "Same", Path = "res://a.svg" };
+        duplicate.Refs[2] = new ResourceRef { RefKey = 2, Constant = "Same", Uid = "uid://b" };
+        ExpectCatalogRejected(duplicate, "重复");
+
+        var bare = new ResourceRefCatalog();
+        bare.Refs[4] = new ResourceRef { RefKey = 4, Constant = "Bare" };
+        ExpectCatalogRejected(bare, "没有 Uid 或 Path");
+
+        var blank = new ResourceRefCatalog();
+        blank.Refs[5] = new ResourceRef { RefKey = 5, Constant = " ", Path = "res://a.svg" };
+        ExpectCatalogRejected(blank, "空白");
+
+        var padded = new ResourceRefCatalog();
+        padded.Refs[6] = new ResourceRef { RefKey = 6, Constant = " Icon", Path = "res://a.svg" };
+        ExpectCatalogRejected(padded, "空白");
+
+        return entry;
+    }
+
+    private static void ExpectCatalogRejected(ResourceRefCatalog message, string fragment)
+    {
+        try
+        {
+            ResourceCatalog.Parse(message.ToByteArray());
+        }
+        catch (InvalidDataException ex)
+        {
+            if (ex.Message.Contains(fragment, StringComparison.Ordinal))
+                return;
+            throw new InvalidOperationException($"拒绝原因应包含「{fragment}」，实际：{ex.Message}");
+        }
+
+        throw new InvalidOperationException($"资源目录应拒绝（{fragment}）。");
+    }
+
+    private static void ExpectMissingDisplayKey(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (KeyNotFoundException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException("缺少的 DisplayKey 应失败。");
+    }
+
+    private static void ExpectBlankDisplayKey(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (ArgumentException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException("空白 DisplayKey 应失败。");
     }
 
     private static void RunAudioPreferenceCheck()

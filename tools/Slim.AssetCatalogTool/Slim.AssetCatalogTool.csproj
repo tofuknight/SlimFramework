@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.Tools.AssetCatalogTool</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Slim.AssetCatalogTool</AssemblyName>
+    <Description>把资源清单生成 ResourceRefCatalog 字节和 DisplayKey 常量类。引用契约和 SlimFramework 的 Parse，不引用 Godot 适配或游戏。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework.Contracts\SlimFramework.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\SlimFramework\SlimFramework.csproj" />
+  </ItemGroup>
+</Project>

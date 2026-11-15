@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `samples/SlimFramework.Demo/` | `SlimFramework.Demo` | 无头示例。`DemoSession`、`DemoPlugin`（`Id` 为 `demo`）、`Protos/demo_profile.proto`、手写表 `Config/`（命名空间 `cfg`）、`Fixtures/tbitem.bytes` |
 | `samples/SlimFramework.Demo.Runner/` | Runner 工程 | `dotnet run` 入口，跑 `DemoSession` |
-| `samples/DemoGame/` | `SlimFramework.DemoGame` | 最小 Godot 工程。`GameRoot` 先跑 `AdapterSmoke`，再跑 `DemoSession` |
+| `samples/DemoGame/` | `SlimFramework.DemoGame` | 最小 Godot 工程。`GameRoot` 先跑 `AdapterSmoke`，再跑 `AssetCatalogSmoke`，然后跑 `DemoSession`。资源清单在 `Assets/resource_refs.json` |
 | `samples/EmptyGame/` | 不在 `SlimFramework.sln` | 拷到单独游戏仓库的空壳。不要在本仓库里打开或构建 |
 
 `DemoSession` / `DemoPlugin` 是用法样例，不是第二款游戏。关卡、剧情、正式 UI 皮肤、玩法系统不进 `DemoGame`，也不进 `src/`。
@@ -40,7 +40,8 @@
 ## 不变量
 
 - 样例证明框架，不反向定义框架。
-- `GameRoot.OnAppReady` 先 `AdapterSmoke.Run`，再 `DemoSession.Run`。通过标准是打出 `SlimFramework Godot adapter smoke OK` 和 `SlimFramework DemoSession OK`。
+- `GameRoot.OnAppReady` 先 `AdapterSmoke.Run`，再 `AssetCatalogSmoke.Run`，然后 `DemoSession.Run`。通过标准是打出 `SlimFramework Godot adapter smoke OK`、`SlimFramework asset catalog smoke OK` 和 `SlimFramework DemoSession OK`。
+- `Assets/resource_refs.json` 归这个样例。`resource_refs.bytes` 和 `AssetKeys.cs` 由 `tools/Slim.AssetCatalogTool` 生成后提交。改清单后要重新生成。玩法代码使用 `AssetKeys`，不写 `res://` 路径。
 - 手写示例表不要生成进 `src/SlimFramework`。`AdapterSmoke` 读的 `res://Config` 与 `Fixtures/tbitem.bytes` 是同一份手写表。
 - `EmptyGame` 不进解决方案，不在本仓库构建。
 - 插件由游戏 `Use`。`SlimBootstrap` 的默认列表不含 `ClickOutsideClose`、`AsyncAssets`、`UiLifecycle`。

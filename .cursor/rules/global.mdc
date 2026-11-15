@@ -1,0 +1,8 @@
+---
+description: SlimFramework 全局约束。分层、公开 API 语言，以及能力地图的位置。
+alwaysApply: true
+---
+
+先读 @AGENTS.md。依赖只能向下。公开 API 用英文 PascalCase，注释和文档用中文。不要引入 QFramework 的 `Command`、`Query`、`BindableProperty`、`IController`、`Architecture`。默认能力、可选插件、留在游戏里的部分以 @docs/architecture.md 文末「全局能力地图」为准。Domain 文件不是扩大核心的许可。
+
+改哪一块就读哪一块的 `DOMAIN.md`。不要为 Save、Assets、UI、Audio 再写一份 Domain。

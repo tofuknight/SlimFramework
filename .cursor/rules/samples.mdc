@@ -1,0 +1,9 @@
+---
+description: 编辑样例时遵守 Samples Domain。
+globs: samples/**/*,samples/*
+alwaysApply: false
+---
+
+编辑 `samples/` 时先读并遵守 @samples/DOMAIN.md。
+
+样例只演示怎么用框架，不要把能力推回 `src/`。插件由游戏 `Use`，不要写进 `SlimBootstrap.Configure`。`src/`、`plugins/`、`tools/` 禁止引用本目录。

@@ -13,6 +13,8 @@ plugins/*           → SlimFramework (+ optional SlimFramework.Godot)
 
 `plugins/ClickOutsideClose` closes the top page when the pointer presses outside that page's rectangle. Games `Use` it after `base.Configure`. `SlimBootstrap.Configure` does not. `samples/SlimFramework.Demo` must not reference it. Hooks are `GodotUiStack.PagePresented` and `PageDismissed`; with no subscriber, open and close stay as they are. Optional plugins are ClickOutsideClose, AsyncAssets, and UiLifecycle; the map is `docs/architecture.md`「全局能力地图」.
 
+Area checklists: `AGENTS.md`, then the `DOMAIN.md` next to the code (`src/SlimFramework`, `src/SlimFramework.Contracts`, `src/SlimFramework.Godot`, `plugins`, `tools`, `samples`). Those files do not permit growing the core.
+
 Never add a `ProjectReference` from `src/` or `tools/` to `samples/` or to a game. Game code may reference the framework. `SlimFramework` must not reference `GodotSharp`; engine types live in `SlimFramework.Godot` (`namespace SlimFramework.GodotAdapter`).
 
 Public entry: `SlimApp` (`src/SlimFramework/SlimApp.cs`). Modules implement `IModule`. Plugins implement `IPlugin` and are attached with `SlimApp.Use`. Godot games subclass `SlimBootstrap`.
@@ -81,6 +83,7 @@ tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
 plugins/                       可选插件（ClickOutsideClose、AsyncAssets、UiLifecycle）。游戏 Use，不进 SlimBootstrap 默认列表
 docs/                          分层、扩展规则、缺口、Luban、Protobuf
+AGENTS.md                      改哪一块先读哪一块的 DOMAIN.md
 CONTRIBUTING.md                贡献方式与合并门禁
 .github/workflows/ci.yml       Release 构建和无头 Demo
 ```
@@ -157,4 +160,4 @@ Bootstrap="*res://Game/GameRoot.cs"
 
 可选插件不进 `SlimBootstrap` 默认列表，清单见 [docs/architecture.md](docs/architecture.md)「全局能力地图」。BGM 交叉淡化仍未做，见 [docs/extension-rules.md](docs/extension-rules.md)。
 
-分层、双 SDK、Luban / Protobuf 放哪、类型落点，以及全局能力地图：[docs/architecture.md](docs/architecture.md)。贡献和合并门禁：[CONTRIBUTING.md](CONTRIBUTING.md)。缺口：[docs/gap-backlog.md](docs/gap-backlog.md)。
+分层、双 SDK、Luban / Protobuf 放哪、类型落点，以及全局能力地图：[docs/architecture.md](docs/architecture.md)。贡献和合并门禁：[CONTRIBUTING.md](CONTRIBUTING.md)。缺口：[docs/gap-backlog.md](docs/gap-backlog.md)。各目录写作约束：[AGENTS.md](AGENTS.md)。

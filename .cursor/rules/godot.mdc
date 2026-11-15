@@ -1,0 +1,9 @@
+---
+description: 编辑 Godot 适配层时遵守 Godot Domain。
+globs: src/SlimFramework.Godot/**/*,src/SlimFramework.Godot/*
+alwaysApply: false
+---
+
+编辑 `src/SlimFramework.Godot/` 时先读并遵守 @src/SlimFramework.Godot/DOMAIN.md。
+
+引擎类型只放这里，命名空间 `SlimFramework.GodotAdapter`。游戏入口是 `SlimBootstrap`。禁止引用 `plugins/`、`samples/` 或任何游戏。不要把插件 `Use` 写进 `SlimBootstrap.Configure`。

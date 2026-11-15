@@ -1,0 +1,9 @@
+---
+description: 编辑 SlimFramework 核心时遵守 Core Domain。
+globs: src/SlimFramework/**/*,src/SlimFramework/*
+alwaysApply: false
+---
+
+编辑 `src/SlimFramework/` 时先读并遵守 @src/SlimFramework/DOMAIN.md。
+
+核心不得引用 Godot、`plugins/`、`samples/` 或任何游戏。公开 API 用英文 PascalCase。不要把 Domain 当成扩大核心的许可。

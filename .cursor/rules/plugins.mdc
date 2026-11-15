@@ -1,0 +1,9 @@
+---
+description: 编辑插件时遵守 Plugins Domain。
+globs: plugins/**/*,plugins/*
+alwaysApply: false
+---
+
+编辑 `plugins/` 时先读并遵守 @plugins/DOMAIN.md。插件特例是该文件里的小节，不要再开一类 Domain。
+
+插件实现 `IPlugin`，由游戏 `SlimApp.Use`。可以依赖 `SlimFramework`，需要引擎类型时再依赖 `SlimFramework.Godot`。禁止引用 `samples/` 或任何游戏。禁止把插件写进 `SlimBootstrap.Configure`。

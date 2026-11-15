@@ -4,7 +4,10 @@ package slim.resource.v1;
 
 option csharp_namespace = "SlimFramework.Contracts.Resource.V1";
 
-// 稳定 ref_key → 资源路径。key 的分配策略由游戏或工具决定，框架只负责装载。
+// 一条资源引用。线格式只有这四个字段。
+// ref_key：运行时和存档用的稳定身份，由游戏分配。
+// constant：DisplayKey。给代码和清单用的名字，可以是空字符串（这条没有名字）。
+// uid / path：加载地址，至少要有一个非空白。运行时非空 uid 优先，否则 path。
 message ResourceRef {
   int32 ref_key = 1;
   string constant = 2;

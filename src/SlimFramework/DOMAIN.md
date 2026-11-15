@@ -53,7 +53,13 @@ Godot 入口怎么把下面这些能力挂上，看架构文档「全局能力�
 
 ### 资源
 
-`IAssetLoader` 只约定同步 `Load<T>` / `Release`（每次 `Load` 加一次引用）。路径含义由实现决定。核心没有异步加载，也没有分帧释放。`ResourceCatalog.Parse` 只装载 `ResourceRefCatalog`。Uid 加载失败后再回退 Path 不做。
+`IAssetLoader` 只约定同步 `Load<T>` / `Release`（每次 `Load` 加一次引用）。路径含义由实现决定。核心没有异步加载，也没有分帧释放。
+
+`ResourceCatalog.Parse` 装载 `ResourceRefCatalog`。`ref_key` 是运行时和存档身份。字段 `constant` 是 DisplayKey，给代码和清单用。`TryGet(int)` 按 `ref_key`，`TryGet(string)` 按 DisplayKey。空 `constant` 不进名字索引，多条都可以为空。`Parse` 在这些情况下抛 `InvalidDataException`：map key 与 `ref_key` 不一致、非空 `constant` 重复、`constant` 有首尾空白、`uid` 和 `path` 都是空白。非空 `constant` 的比较是序数的，不忽略大小写。
+
+`ResourceRefEntry.LoadKey` 取非空 Uid，否则 Path。空白 Uid 视为没有 Uid。Uid 加载失败后再试 Path 不做。`ResourceRefLoader` 把 `LoadKey` 交给 `IAssetLoader`，可以按条目、按 `ref_key`，或按 DisplayKey。
+
+清单和 key 的分配归游戏。生成字节和 C# 常量的工具是 `tools/Slim.AssetCatalogTool`，不在核心里。字段级约定见 [docs/PROTOBUF.md](../../docs/PROTOBUF.md)。
 
 ### UI
 
@@ -89,6 +95,7 @@ dotnet run --project samples/SlimFramework.Demo.Runner
 - 把 `IModule` 或 `ITickable` 当成 `Get<T>` 的键，或同一种服务注册两次。
 - `Init` 之后 `Add`。
 - 发明 `Command`、`Query`、`BindableProperty`、`Architecture`。
-- 把表生成物、玩法 proto、关卡或剧情放进本目录。
+- 把表生成物、资源清单、玩法 proto、关卡或剧情放进本目录。
+- 在 `Parse` 里把 Uid 加载失败再换成 Path，或把 DisplayKey 当成 `res://` 路径。
 - 改 `External/Luban` 的读格式，或只换其中一两个文件。
 - 公开 API 用中文命名。

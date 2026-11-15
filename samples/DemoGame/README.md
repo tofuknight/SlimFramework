@@ -37,14 +37,24 @@ dotnet build SlimFramework.DemoGame.csproj -p:SlimDemoGameEditorBuild=false
 
 `GameRoot.Configure` 在 `base.Configure` 之后 `Use` `ClickOutsideClosePlugin`。`SlimBootstrap.Configure` 不挂它。冒烟不点击，所以这两行 OK 不覆盖点外部关闭。手动验法：打开一个矩形没有铺满视口的页面，在矩形外按下鼠标左键，栈顶应被 `CloseTop` 关掉。未 `Use` 该插件时，`GodotUiStack` 的打开和关闭与没有 `PagePresented` / `PageDismissed` 订阅者时相同。
 
-`GameRoot.OnAppReady` 先跑 `AdapterSmoke`，再跑无头的 `DemoSession`。冒烟用的是 Bootstrap 已经挂上的服务，不是另一套 `MemorySaveStore`：
+`GameRoot.OnAppReady` 先跑 `AdapterSmoke`，再跑 `AssetCatalogSmoke`，然后跑无头的 `DemoSession`。冒烟用的是 Bootstrap 已经挂上的服务，不是另一套 `MemorySaveStore`：
 
 - `res://SmokePage.tscn`（根节点是 `Control`）经 `IUiStack.Open` / `CloseTop`
 - `audio.music` / `audio.sfx` / `audio.ui` 写入偏好后再 `AudioPreferences.Apply`，读回 `GodotAudio` 的三条总线
 - `IAudio.PlayUi`、`PlayMusic`、`PlaySfx` 都用 `res://ui-click.wav`。之后各有一个正在播放、`Stream` 非空的 `AudioStreamPlayer`：总线名 `UI`、`Music`、`SFX`。音量断言不能代替这三次播放
 - `GodotTableFiles.FromGodotRes("res://Config")` 经 `FileAccess` 读 `tbitem.bytes`。字节与 `samples/SlimFramework.Demo/Fixtures/tbitem.bytes` 相同，是手写示例，不生成进 `src/SlimFramework`
 - 槽位 0 经 `SaveService` 往返，并由另一个 `GodotUserSaveStore` 从 `user://` 读到字节
+- `AssetCatalogSmoke` 用 `FileAccess` 读 `res://Assets/resource_refs.bytes`，再经 `IAssetLoader` 按 DisplayKey 加载 `res://SmokePage.tscn` 和 `res://ui-click.wav`。常量类是 `AssetKeys`。清单源文件是 `Assets/resource_refs.json`，归这个样例。改清单后重新生成：
 
-`dotnet build` 只能证明这些类型编得过。适配器有没有跑，要看 Godot 里这两行输出：`SlimFramework Godot adapter smoke OK`，然后 `SlimFramework DemoSession OK`。无头证明仍是 `dotnet run --project samples/SlimFramework.Demo.Runner`，它不进 Godot。
+```bash
+dotnet run --project ../../tools/Slim.AssetCatalogTool -- generate Assets/resource_refs.json \
+  --catalog Assets/resource_refs.bytes \
+  --code AssetKeys.cs \
+  --namespace SlimFramework.DemoGame \
+  --class AssetKeys \
+  --project .
+```
+
+`dotnet build` 只能证明这些类型编得过。适配器有没有跑，要看 Godot 里这三行输出：`SlimFramework Godot adapter smoke OK`，`SlimFramework asset catalog smoke OK`，然后 `SlimFramework DemoSession OK`。无头证明仍是 `dotnet run --project samples/SlimFramework.Demo.Runner`，它不进 Godot。`DemoSession` 自己还会打出 `SlimFramework demo OK`。
 
 `SlimBootstrap` 和 `UiPage` 由 `src/SlimFramework.Godot/build/SlimFramework.Godot.targets` 拷到本目录的 `SlimFramework.Scripts/`（不入库）再编译。不要把这两个类型改回适配程序集，否则编辑器 Play 会报 `ScriptTypeBiMap` 重复键。脚本暂存规则见 [docs/extension-rules.md](../../docs/extension-rules.md)。Play 门禁见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。

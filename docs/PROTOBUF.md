@@ -73,12 +73,43 @@ dotnet run --project tools/Slim.SaveTool -- unpack slot.sav
 
 ## 资源 ref
 
-工具或游戏把 `ResourceRefCatalog` 写成字节（字段：`ref_key`、`constant`、`uid`、`path`）。运行时：
+`ResourceRef` 的字段是 `ref_key`、`constant`、`uid`、`path`。`ResourceRefCatalog.refs` 的 map key 必须等于 `ref_key`。线格式只有这些字段。
+
+两个身份分开用：
+
+| 字段 | 角色 |
+| --- | --- |
+| `ref_key` | 运行时和存档用的身份。游戏分配，写进目录字节。玩法代码用生成常量，例如 `AssetKeys.PotionIcon` |
+| `constant` | DisplayKey。给人、给 AI、给生成的 C# 常量用的名字 |
+
+空 `constant` 表示这条没有名字，只能按 `ref_key` 取。多条都可以为空。只含空白，或首尾有空白，是非法的。非空 `constant` 不能重复。比较按序数，不忽略大小写。
+
+`uid` 和 `path` 至少要有一个非空白。`ResourceRefEntry.LoadKey` 用非空 Uid，否则 Path。Uid 加载失败后再试 Path 不做。
+
+`ResourceCatalog.Parse` 读字节。下面几种情况抛 `InvalidDataException`：map key 与 `ref_key` 不一致、非空 `constant` 重复、`constant` 有首尾空白、`uid` 和 `path` 都是空白。损坏的 protobuf 仍由 `Google.Protobuf` 抛出。
 
 ```csharp
 var catalog = ResourceCatalog.Parse(bytes);
-if (catalog.TryGet(key, out var entry))
-    loader.Load<PackedScene>(entry);
+catalog.TryGet(AssetKeys.PotionIcon, out var byKey);
+loader.Load<PackedScene>(catalog, AssetKeys.PotionIcon);
+loader.Load<PackedScene>(catalog, "PotionIcon");
 ```
 
-`ResourceRefEntry.LoadKey` 在 Uid 非空时用 Uid，否则用 Path。key 怎么分配由游戏决定。本框架不生成这张表。Uid 加载失败后再回退 Path 仍不做。`GodotAssetLoader` 同时接受 `res://` 和 `uid://`。
+`TryGet(int)` 按 `ref_key`。`TryGet(string)` 按 DisplayKey；空字符串返回 false。`ResourceRefLoader` 的 `Load` 扩展把 `LoadKey` 交给已有的 `IAssetLoader`：按条目、按 `ref_key`，或按 DisplayKey。
+
+清单和 key 归游戏。游戏维护一份可 diff 的 JSON 数组，字段名与 proto 相同（`ref_key`、`constant`、`uid`、`path`，后三个可省略，省略即空字符串）。`tools/Slim.AssetCatalogTool` 生成目录字节和常量类。框架程序集不生成这张表，也不分配 key。玩法代码使用常量，不写 `res://` 路径，也不手写 `ref_key`。
+
+```bash
+dotnet run --project tools/Slim.AssetCatalogTool -- generate Assets/resource_refs.json \
+  --catalog Assets/resource_refs.bytes \
+  --code AssetKeys.cs \
+  --namespace Game \
+  --class AssetKeys \
+  --project .
+```
+
+`--project` 可省略。给出时只读磁盘，不启动 Godot：`res://` 文件要在工程里；清单里的 uid 要和同路径的 `.uid`、`.import` 的 `uid=`，或 `.tscn` / `.tres` 文本头里的 `uid` 一致。同一个文件上有多处 uid 时，这几处必须相同。`check` 只核对，不写文件。
+
+非空 `constant` 还要能作为 C# 标识符（ASCII 字母、数字、下划线，且不是关键字），否则写不出常量类。`Parse` 不检查标识符，按字符串查找不受这一条影响。
+
+本仓库的例子是 `samples/DemoGame/Assets/resource_refs.json`。`GodotAssetLoader` 同时接受 `res://` 和 `uid://`。

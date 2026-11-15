@@ -55,7 +55,7 @@ dotnet build SlimFramework.sln -c Release
 
 `dotnet build` 不需要安装 Godot，只能证明类型编得过。仓库没有适配层的 `dotnet test`。
 
-动了适配、脚本暂存，或 `samples/DemoGame` 的场景 / 冒烟时，按 [CONTRIBUTING.md](../../CONTRIBUTING.md)：用 Godot 4.7.2 .NET 打开 `samples/DemoGame/project.godot`（不要打开仓库根），Play `Main.tscn`。必须打出 `SlimFramework Godot adapter smoke OK` 和 `SlimFramework DemoSession OK`，且没有 `ScriptTypeBiMap` 重复登记。
+动了适配、脚本暂存，或 `samples/DemoGame` 的场景 / 冒烟时，按 [CONTRIBUTING.md](../../CONTRIBUTING.md)：用 Godot 4.7.2 .NET 打开 `samples/DemoGame/project.godot`（不要打开仓库根），Play `Main.tscn`。必须打出 `SlimFramework Godot adapter smoke OK`、`SlimFramework asset catalog smoke OK` 和 `SlimFramework DemoSession OK`，且没有 `ScriptTypeBiMap` 重复登记。
 
 `dotnet run --project samples/SlimFramework.Demo.Runner` 不进编辑器，不能代替这次 Play。
 

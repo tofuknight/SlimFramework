@@ -17,6 +17,16 @@ jobs:
         run: dotnet build SlimFramework.sln -c Release
       - name: Headless demo
         run: dotnet run --project samples/SlimFramework.Demo.Runner
+      - name: Asset catalog tool
+        run: |
+          dotnet run --project tools/Slim.AssetCatalogTool -c Release -- generate samples/DemoGame/Assets/resource_refs.json \
+            --catalog /tmp/resource_refs.bytes \
+            --code /tmp/AssetKeys.cs \
+            --namespace SlimFramework.DemoGame \
+            --class AssetKeys \
+            --project samples/DemoGame
+          cmp /tmp/resource_refs.bytes samples/DemoGame/Assets/resource_refs.bytes
+          cmp /tmp/AssetKeys.cs samples/DemoGame/AssetKeys.cs
       - name: Install p7zip
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
       - name: Luban generate.sh checksum and usage

@@ -27,7 +27,7 @@
 
 `SaveSlot` 现有字段只有 `format_version = 1`、`display_name = 2`、`sections = 3`。禁止把玩法字段加进这个 message。若线格式必须扩展，新字段使用新的 field number，并视同存档格式变更走 PR。已有 field number 不能改作他用。
 
-`ResourceRef` 的字段是 `ref_key`、`constant`、`uid`、`path`。`ResourceRefCatalog.refs` 的 key 必须与 `ref_key` 一致。key 怎么分配由游戏或工具决定。本框架不生成这张表。
+`ResourceRef` 的字段是 `ref_key`、`constant`、`uid`、`path`。`ResourceRefCatalog.refs` 的 key 必须与 `ref_key` 一致。`ref_key` 是运行时和存档身份，`constant` 是 DisplayKey。空 `constant` 表示没有名字。key 怎么分配由游戏决定。本程序集不生成这张表；生成工具是 `tools/Slim.AssetCatalogTool`，运行时校验在 `ResourceCatalog.Parse`。
 
 ## 不变量
 

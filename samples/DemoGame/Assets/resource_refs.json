@@ -1,0 +1,12 @@
+[
+  {
+    "ref_key": 1,
+    "constant": "SmokePage",
+    "path": "res://SmokePage.tscn"
+  },
+  {
+    "ref_key": 2,
+    "constant": "UiClick",
+    "path": "res://ui-click.wav"
+  }
+]

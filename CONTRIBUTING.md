@@ -6,6 +6,7 @@
 - [docs/extension-rules.md](docs/extension-rules.md) — 插件、延后功能、Godot 脚本暂存、禁止向上依赖
 - [docs/gap-backlog.md](docs/gap-backlog.md) — P1 已清掉；P2、明确不做、触发才做
 - [docs/LUBAN.md](docs/LUBAN.md)、[docs/PROTOBUF.md](docs/PROTOBUF.md) — 生成步骤和契约字段
+- [AGENTS.md](AGENTS.md) — 改哪一块先读哪一块的 `DOMAIN.md`。Domain 不是扩大核心的许可
 
 代码和这些文档不一致：不合。服从文档，或在同一次 PR 里改文档并走对应审阅。
 

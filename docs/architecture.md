@@ -2,6 +2,8 @@
 
 改程序集分层、`DemoGame` 的 SDK 开关、Luban pin、Protobuf 契约位置时，用本文挡。不符合就不合。插件、脚本暂存、延后功能见 [extension-rules.md](extension-rules.md)。合入条件见 [../CONTRIBUTING.md](../CONTRIBUTING.md)。
 
+各目录给代理用的约束在对应 `DOMAIN.md`，索引见 [../AGENTS.md](../AGENTS.md)。Domain 不另立分类，也不改写文末「全局能力地图」。
+
 ## 程序集分层
 
 依赖只能向下。

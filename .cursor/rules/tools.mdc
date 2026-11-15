@@ -1,0 +1,9 @@
+---
+description: 编辑工具和 Luban pin 时遵守 Tools Domain。
+globs: tools/**/*,tools/*,third_party/Luban/**/*,third_party/Luban/*
+alwaysApply: false
+---
+
+编辑 `tools/` 或 `third_party/Luban/` 时先读并遵守 @tools/DOMAIN.md。生成步骤以 @docs/LUBAN.md 为准。
+
+Luban CLI 锁在本仓库。生成的表留在游戏工程。工具禁止引用 `samples/`、游戏或 `SlimFramework.Godot`。

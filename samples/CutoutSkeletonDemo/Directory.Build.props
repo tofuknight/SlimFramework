@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    与 samples/DemoGame 同一套开关，属性名分开，避免两个 Godot 工程互相改写。
+    Godot.NET.Sdk 会在本文件之后、csproj 之前，给空的 GodotTargetPlatform 填上当前操作系统。
+    编辑器构建则更早通过 -p:GodotTargetPlatform= 传入。这里把「调用方有没有传入」记下来。
+    本目录的 Directory.Build.props 会挡住仓库根那份，所以先把它引进来。
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
+  <PropertyGroup>
+    <SlimCutoutSkeletonDemoEditorBuild Condition="'$(SlimCutoutSkeletonDemoEditorBuild)' == '' and '$(GodotTargetPlatform)' != ''">true</SlimCutoutSkeletonDemoEditorBuild>
+  </PropertyGroup>
+</Project>

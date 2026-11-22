@@ -26,7 +26,7 @@
 
 插件需要核心尚不存在的钩子时：钩子是框架 PR，默认行为与未挂插件时一致；功能本体仍在 `plugins/`。禁止把插件实现移进 `src/` 来「省事」。
 
-需要 Godot 的插件只能由 `samples/DemoGame` 或真实游戏 `Use`。`samples/SlimFramework.Demo` 保持无 Godot，禁止引用这种插件。
+需要 Godot 的插件只能由 `samples/DemoGame`、`samples/CutoutSkeletonDemo` 或真实游戏 `Use`。`samples/SlimFramework.Demo` 保持无 Godot，禁止引用这种插件。
 
 ### 脚手架
 

@@ -7,12 +7,15 @@ Dependency direction (enforced by `Directory.Build.targets` where noted):
 ```
 samples/DemoGame  →  SlimFramework.Demo  →  SlimFramework  →  SlimFramework.Contracts
                   →  SlimFramework.Godot →  SlimFramework
+samples/CutoutSkeletonDemo → SlimFramework.Godot, plugins/CutoutSkeleton
 tools/Slim.SaveTool → SlimFramework.Contracts
 tools/Slim.AssetCatalogTool → SlimFramework.Contracts, SlimFramework
 plugins/*           → SlimFramework (+ optional SlimFramework.Godot)
 ```
 
-`plugins/ClickOutsideClose` closes the top page when the pointer presses outside that page's rectangle. Games `Use` it after `base.Configure`. `SlimBootstrap.Configure` does not. `samples/SlimFramework.Demo` must not reference it. Hooks are `GodotUiStack.PagePresented` and `PageDismissed`; with no subscriber, open and close stay as they are. Optional plugins are ClickOutsideClose, AsyncAssets, and UiLifecycle; the map is `docs/architecture.md`「全局能力地图」.
+`plugins/ClickOutsideClose` closes the top page when the pointer presses outside that page's rectangle. Games `Use` it after `base.Configure`. `SlimBootstrap.Configure` does not. `samples/SlimFramework.Demo` must not reference it. Hooks are `GodotUiStack.PagePresented` and `PageDismissed`; with no subscriber, open and close stay as they are. Optional plugins are ClickOutsideClose, AsyncAssets, UiLifecycle, and CutoutSkeleton; the map is `docs/architecture.md`「全局能力地图」.
+
+`plugins/CutoutSkeleton` is an opt-in Godot `Skeleton2D` / `Bone2D` cutout rig: slot swap changes a `Sprite2D` texture, clips stay on one `AnimationPlayer`, and an optional sine writes only the bones the caller names. It does not know species or game rules. `samples/CutoutSkeletonDemo` owns the open-ocean fish mapping. Do not put that mapping in the plugin, in core, or in `samples/DemoGame`. `SlimBootstrap.Configure` does not `Use` it.
 
 Area checklists: `AGENTS.md`, then the `DOMAIN.md` next to the code (`src/SlimFramework`, `src/SlimFramework.Contracts`, `src/SlimFramework.Godot`, `plugins`, `tools`, `samples`). Those files do not permit growing the core.
 
@@ -36,6 +39,8 @@ License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NO
 
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
 
+`samples/CutoutSkeletonDemo` keeps `Sdk="Godot.NET.Sdk/4.7.2"` as well, with its own `SlimCutoutSkeletonDemoEditorBuild` switch. Play `samples/CutoutSkeletonDemo/project.godot` `Main.tscn` to see the cutout sample. Headless: `godot --headless --path samples/CutoutSkeletonDemo` prints `SlimFramework cutout skeleton sample smoke OK` and quits. That run does not replace DemoGame AdapterSmoke.
+
 `samples/EmptyGame` is a copy-out shell for a new game repository (submodule consumer). It is not in `SlimFramework.sln`. Do not build it inside this repo, and do not put gameplay in `samples/DemoGame`. Do not add a `ProjectReference` from `src/`, `plugins/`, or `tools/` to `samples/EmptyGame`.
 
 Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md`, `docs/gap-backlog.md`. Do not push `main`. Framework API, layering, Godot adapter, save format, and Luban pin changes need a PR plus Forge architecture review. Godot-touching changes also need a local AdapterSmoke pass: Play `samples/DemoGame` `Main.tscn` must print `SlimFramework Godot adapter smoke OK`, `SlimFramework asset catalog smoke OK`, and `SlimFramework DemoSession OK`, and must not double-register in `ScriptTypeBiMap`.
@@ -49,7 +54,7 @@ Merge gates: `CONTRIBUTING.md`, `docs/architecture.md`, `docs/extension-rules.md
 ## 环境
 
 - .NET SDK 8
-- 可选：Godot 4.7.2 .NET 编辑器（只在打开 `samples/DemoGame` 时需要）
+- 可选：Godot 4.7.2 .NET 编辑器（打开 `samples/DemoGame` 或 `samples/CutoutSkeletonDemo` 时需要）
 - `GodotSharp` 4.7.2、`Google.Protobuf` 3.34.1、`Grpc.Tools` 2.80.0（版本写在 `Directory.Build.props`）
 
 ## 构建
@@ -84,12 +89,13 @@ src/SlimFramework.Godot        Godot 适配（程序集名 SlimFramework.Godot�
 samples/SlimFramework.Demo     示例游戏逻辑，不引用 Godot
 samples/SlimFramework.Demo.Runner
 samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适配，再跑 DemoSession
+samples/CutoutSkeletonDemo     剪影换装样例。Use CutoutSkeleton，鱼的部位对照留在这里
 samples/EmptyGame              新游戏空壳。拷到单独的仓库再用，不进解决方案，不放玩法
 tools/Slim.SaveTool            只依赖契约的存档信封工具
 tools/Slim.AssetCatalogTool    资源清单 → ResourceRefCatalog 字节 + DisplayKey 常量类
 tools/Luban/generate.sh        用锁定的 Luban CLI 生成表
 third_party/Luban              Luban 4.12.0 CLI 压缩包和校验
-plugins/                       可选插件（ClickOutsideClose、AsyncAssets、UiLifecycle）。游戏 Use，不进 SlimBootstrap 默认列表
+plugins/                       可选插件（ClickOutsideClose、AsyncAssets、UiLifecycle、CutoutSkeleton）。游戏 Use，不进 SlimBootstrap 默认列表
 docs/                          分层、扩展规则、缺口、Luban、Protobuf
 AGENTS.md                      改哪一块先读哪一块的 DOMAIN.md
 CONTRIBUTING.md                贡献方式与合并门禁

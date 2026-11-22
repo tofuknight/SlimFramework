@@ -1,0 +1,22 @@
+; Godot 4.7.2 剪影换装样例。打开本目录的 project.godot，不要把仓库根目录当游戏工程。
+; C# 工程是 SlimFramework.CutoutSkeletonDemo.csproj（须与下面的 assembly_name 同名）。
+config_version=5
+
+[application]
+
+config/name="Cutout Skeleton Demo"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[dotnet]
+
+project/assembly_name="SlimFramework.CutoutSkeletonDemo"
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.03, 0.09, 0.14, 1)

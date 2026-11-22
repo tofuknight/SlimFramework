@@ -1,18 +1,19 @@
 # Plugins
 
-`plugins/` 的写作约束。边界以 [docs/extension-rules.md](../docs/extension-rules.md) 为准，三个插件的取用方式见 [docs/architecture.md](../docs/architecture.md)「全局能力地图」。不要再开一类 Domain。某个插件的特例写在下面的小节里。
+`plugins/` 的写作约束。边界以 [docs/extension-rules.md](../docs/extension-rules.md) 为准，四个插件的取用方式见 [docs/architecture.md](../docs/architecture.md)「全局能力地图」。不要再开一类 Domain。某个插件的特例写在下面的小节里。
 
 ## 范围
 
 `plugins/<Name>/`，独立类库，加入 `SlimFramework.sln`。脚手架是 `plugins/<Name>/<Name>.csproj` 和 `<Name>Plugin.cs`。
 
-`main` 上只有这三个。不要把还没落地的功能写成已经有：
+`main` 上只有这四个。不要把还没落地的功能写成已经有：
 
 | 插件 | Id | 命名空间 | 路径 |
 | --- | --- | --- | --- |
 | `ClickOutsideClosePlugin` | `click-outside-close` | `SlimFramework.ClickOutsideClose` | `plugins/ClickOutsideClose/` |
 | `AsyncAssetsPlugin` | `async-assets` | `SlimFramework.AsyncAssets` | `plugins/AsyncAssets/` |
 | `UiLifecyclePlugin` | `ui-lifecycle` | `SlimFramework.UiLifecycle` | `plugins/UiLifecycle/` |
+| `CutoutSkeletonPlugin` | `cutout-skeleton` | `SlimFramework.CutoutSkeleton` | `plugins/CutoutSkeleton/` |
 
 `samples/SlimFramework.Demo` 的 `DemoPlugin`（`Id` 为 `demo`）是无头用法样例，不在本目录，也不进默认列表。
 
@@ -34,7 +35,7 @@
 
 需要核心尚不存在的钩子时：钩子是框架 PR，未挂插件时行为不变；功能本体仍在 `plugins/`。禁止把实现移进 `src/`。
 
-需要 Godot 的插件只能由 `samples/DemoGame` 或真实游戏 `Use`。`samples/SlimFramework.Demo` 禁止引用这种插件。
+需要 Godot 的插件只能由 `samples/DemoGame`、`samples/CutoutSkeletonDemo` 或真实游戏 `Use`。`samples/SlimFramework.Demo` 禁止引用这种插件。
 
 新可选能力一次一个插件 PR。明确不做的项（DI、Manager、MVVM、玩法系统、`Command` / `Query` / `Architecture`）见 [docs/gap-backlog.md](../docs/gap-backlog.md)。BGM 交叉淡化还没做；要做也是新插件，且未挂时 `PlayMusic` / `StopMusic` 仍是直接切换。
 
@@ -62,17 +63,21 @@
 
 打开序只来自 `PagePresented` / `PageDismissed`，不另做一套栈。栈顶按打开顺序，与 `CloseTop` 一致，不按 `UiLayer`。`GodotUiStack.Shutdown` 只调用 `OnClose`，不发 `PageDismissed`，因此这段时间没有 `OnRevealed`。回调里不要 `Open` 或 `CloseTop`。核心侧页面生命周期仍然只有 `IUiPage.OnOpen` / `OnClose`。
 
+### CutoutSkeleton
+
+`Register` 不要求已经 `Add` 的服务。取用是 `Get<CutoutSkeletonModule>()`。`Attach` 用调用方给的骨骼表和槽位表建 Godot 内置 `Skeleton2D` / `Bone2D`，槽位是挂在骨骼上的 `Sprite2D`。`SetSlotTexture` 只改该槽的贴图。片段在同一台 `AnimationPlayer` 上，不按贴图复制。`SpineSine` 可选：调用方点名哪些骨骼，每帧把它们的旋转写成静息角加正弦，不改骨骼层级，也不改贴图。均匀尺寸只写根节点的 `Scale`。插件里没有物种、基因或玩法表。
+
 ## 怎么验证
 
-三个插件工程都在 `SlimFramework.sln` 里。仓库没有插件专用测试。
+四个插件工程都在 `SlimFramework.sln` 里。仓库没有插件专用测试。
 
 ```bash
 dotnet build SlimFramework.sln -c Release
 ```
 
-`samples/DemoGame` 的 `GameRoot` 在 `base.Configure` 之后 `Use` 了 `ClickOutsideClosePlugin`（以及示例 `DemoPlugin`）。它不 `Use` `AsyncAssetsPlugin` 或 `UiLifecyclePlugin`。无头 Runner 不引用这些插件，不能证明插件行为。
+`samples/DemoGame` 的 `GameRoot` 在 `base.Configure` 之后 `Use` 了 `ClickOutsideClosePlugin`（以及示例 `DemoPlugin`）。它不 `Use` `AsyncAssetsPlugin`、`UiLifecyclePlugin` 或 `CutoutSkeletonPlugin`。无头 Runner 不引用这些插件，不能证明插件行为。
 
-动了 Godot 插件时，仍按 [CONTRIBUTING.md](../CONTRIBUTING.md) Play `samples/DemoGame` 的 `Main.tscn`（两行 OK，且没有 `ScriptTypeBiMap` 重复登记）。那次冒烟不能代替对 AsyncAssets 或 UiLifecycle 行为的核对。
+动了 Godot 插件时，仍按 [CONTRIBUTING.md](../CONTRIBUTING.md) Play `samples/DemoGame` 的 `Main.tscn`（两行 OK，且没有 `ScriptTypeBiMap` 重复登记）。那次冒烟不能代替对 AsyncAssets、UiLifecycle 或 CutoutSkeleton 行为的核对。剪影换装看 `samples/CutoutSkeletonDemo`：Play `Main.tscn` 应打出 `SlimFramework cutout skeleton sample smoke OK`。
 
 ## 常见写错
 
@@ -84,3 +89,5 @@ dotnet build SlimFramework.sln -c Release
 - `GodotUiStack` 还没 `Add` 就 `Use` 点外部关闭或 UI 生命周期。
 - 让 `samples/SlimFramework.Demo` 引用需要 Godot 的插件。
 - 把 BGM 交叉淡化写成已经存在的插件。
+- 把物种表、换装档位或玩法规则写进 `CutoutSkeleton`。
+- 在 `SlimBootstrap.Configure` 里 `Use` `CutoutSkeletonPlugin`。

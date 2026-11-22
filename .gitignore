@@ -25,6 +25,7 @@ third_party/Luban/.extracted/
 
 # 游戏工程里由 SlimFramework.Godot.targets 从适配层源文件拷出来的脚本
 samples/DemoGame/SlimFramework.Scripts/
+samples/CutoutSkeletonDemo/SlimFramework.Scripts/
 
 # IDE / OS
 .vs/

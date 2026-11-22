@@ -1,0 +1,38 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!--
+    用 Godot 4.7.2 .NET 编辑器打开本目录的 project.godot，不要把仓库根当游戏工程。
+    文件名必须是 SlimFramework.CutoutSkeletonDemo.csproj（project.godot 的 dotnet/project/assembly_name）。
+    Sdk 固定为 Godot.NET.Sdk/4.7.2。不要改这个字符串，也不要改成别的 Godot 版本。
+
+    开关 SlimCutoutSkeletonDemoEditorBuild（判定在 Directory.Build.props）：
+      未设置 / false — dotnet build 不需要安装编辑器。关掉 SDK 隐式 GodotSharp，改用仓库包。
+      true — 编辑器传入 GodotTargetPlatform 时打开，使用 SDK 自带的 GodotSharp。
+    说明的长版本见 samples/DemoGame/README.md。本样例只是把属性名换成自己的，避免和 DemoGame 耦在一起。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SlimFramework.CutoutSkeletonDemo</RootNamespace>
+    <AssemblyName>SlimFramework.CutoutSkeletonDemo</AssemblyName>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DisableImplicitGodotSharpReferences Condition="'$(SlimCutoutSkeletonDemoEditorBuild)' != 'true'">true</DisableImplicitGodotSharpReferences>
+    <DisableImplicitGodotGeneratorReferences Condition="'$(SlimCutoutSkeletonDemoEditorBuild)' != 'true'">true</DisableImplicitGodotGeneratorReferences>
+    <Configurations Condition="'$(SlimCutoutSkeletonDemoEditorBuild)' != 'true'">Debug;Release</Configurations>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SlimCutoutSkeletonDemoEditorBuild)' != 'true'">
+    <PackageReference Include="GodotSharp" Version="$(GodotSharpVersion)" />
+  </ItemGroup>
+  <Import Project="..\..\src\SlimFramework.Godot\build\SlimFramework.Godot.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SlimFramework.Godot\SlimFramework.Godot.csproj" />
+    <ProjectReference Include="..\..\plugins\CutoutSkeleton\CutoutSkeleton.csproj" />
+  </ItemGroup>
+  <Target Name="GuardCutoutSkeletonDemoGodotSharpSwitch" BeforeTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <_GodotSharpRef Include="@(PackageReference)" Condition="'%(Identity)' == 'GodotSharp'" />
+    </ItemGroup>
+    <Error Condition="'@(_GodotSharpRef->Count())' != '1'"
+           Text="CutoutSkeletonDemo 必须恰好引用一份 GodotSharp。无编辑器构建只保留 PackageReference；编辑器构建（SlimCutoutSkeletonDemoEditorBuild=true）只保留 Godot.NET.Sdk/4.7.2 的隐式引用。两份同时在会类型重复。" />
+  </Target>
+</Project>

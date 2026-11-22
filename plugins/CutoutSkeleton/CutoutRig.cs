@@ -272,15 +272,28 @@ public sealed class CutoutRig
     /// 推进正弦并写到指定骨骼的旋转。会再推迟到本帧空闲写一次，
     /// 以便落在 <see cref="Skeleton2D"/> 和 <see cref="AnimationPlayer"/> 的处理之后。
     /// 只覆盖正弦名单里的骨骼。
+    /// 单套骨架自己推迟一次。<see cref="CutoutSkeletonModule"/> 的 <c>Tick</c> 不走这里的推迟，
+    /// 而是把本帧全部骨架合成一次空闲写入，避免每套各排一个 <c>CallDeferred</c>。
     /// </summary>
     public void Advance(double delta)
     {
-        if (!double.IsFinite(delta) || _sine == null || !_sineEnabled)
+        if (!AdvanceImmediate(delta))
             return;
-        _sineTime += delta;
-        WritePose();
         QueueLateWrite();
     }
+
+    /// <summary>推进并立刻写姿态，不为本骨架排队。给模块批量补写用。</summary>
+    internal bool AdvanceImmediate(double delta)
+    {
+        if (!double.IsFinite(delta) || _sine == null || !_sineEnabled)
+            return false;
+        _sineTime += delta;
+        WritePose();
+        return true;
+    }
+
+    /// <summary>再写一次当前正弦。调用方负责把多套骨架合成到同一次空闲调用里。</summary>
+    internal void WriteSpinePose() => WritePose();
 
     private void QueueLateWrite()
     {

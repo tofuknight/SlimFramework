@@ -1,18 +1,20 @@
-# 剪影换装样例
+# 剪影换装与对战样例
 
-用 Godot **4.7.2 .NET** 打开本目录的 `project.godot`，Play `Main.tscn`。不要把仓库根目录当游戏工程。
+用 Godot **4.7.2 .NET** 打开本目录的 `project.godot`。不要把仓库根目录当游戏工程。
 
-这里演示可选插件 `plugins/CutoutSkeleton`。鱼的部位对照留在本目录，不进插件，也不进 `samples/DemoGame`。
+这里演示可选插件 `plugins/CutoutSkeleton`。鱼的部位对照、占位图和对战规则留在本目录，不进插件，也不进 `samples/DemoGame`。
 
-## 画面里有什么
+主场景是换装。对战是同一工程里的另一场，三十条鱼各自游动并出手。玩家不指挥单条鱼。
 
-一条远洋流线型。骨骼是 Godot 内置的 `Skeleton2D` / `Bone2D`：
+## 换装
+
+Play `Main.tscn`。一条远洋流线型。骨骼是 Godot 内置的 `Skeleton2D` / `Bone2D`：
 
 `Root → SpineFront（Head→Jaw、Ridge、Dorsal、Pectoral）→ SpineMid → SpineTail → Tail`
 
 槽位是挂在骨骼上的 `Sprite2D`：下颌、头、身体、背肌、背鳍、胸鳍、尾。贴图是代码里画的色块，没有正式像素图。
 
-口、体、鳍各三档。换档只改对应槽位的贴图。游动和咬合是同一台 `AnimationPlayer` 上的两段片段，三条外观共用。脊柱（含尾骨）用插件的正弦摆动，不写进片段。
+口、体、鳍各三档。换档只改对应槽位的贴图。游动、咬合、冲刺、甩尾、后仰写在同一套片段里，挂到这一台 `AnimationPlayer` 上。换装场景只操作游动和咬合。脊柱（含尾骨）用插件的正弦摆动，不写进游动和咬合。
 
 | 输入 | 作用 |
 | --- | --- |
@@ -20,18 +22,57 @@
 | `4` `5` `6` 或按钮「体」 | 换身体和背肌 |
 | `7` `8` `9` 或按钮「鳍」 | 换背鳍、胸鳍和尾 |
 | `Space` 或按钮「咬合」 | 播咬合，结束后回到循环游动 |
+| `C` 或按钮「对战」 | 进入对战场景 |
 
 根节点缩放是均匀的，用来把鱼放到看得清的尺寸。没有幼体 / 成体切换。
 
 通过时输出一行：`SlimFramework cutout skeleton sample smoke OK`。编辑器里这条出现后场景继续跑。
 
-无头（Godot 4.7.2 .NET 可执行文件）：
+## 对战
+
+Play `Combat.tscn`：在文件系统里选中它，按 F6（运行当前场景）。也可以先 Play 换装，再按 `C`。
+
+三十条远洋流线型，用同一套 `CutoutRig` 和 `OpenOceanFish`。出生时随机口、体、鳍档位，以及一个不大的均匀根缩放。仍是占位色块。
+
+场地是矩形水池。鱼用运动学转向，不进 `RigidBody2D`。每条鱼自己游、在附近找活鱼、靠近、进入距离后播一段攻击、短暂停一下，再重复。简单生命：被打到后倒下的鱼不再出手，肚皮朝上、下沉并变淡。`R` 重开会清掉这一场，再生成三十条。
+
+攻击片段全场共用同一份 `Animation`：咬合、冲刺（头、下颌，加上身体前倾）、甩尾（尾和尾椎）。受击时可以播一段短后仰。换槽位贴图不重建、也不复制片段库。冲刺和甩尾会暂时关掉这条鱼的脊柱正弦，片段才能写到那些骨头上；结束后回到循环游动，正弦重新打开。咬合时正弦保持，和换装场景一样。鱼头朝速度方向，靠根节点旋转，不靠插件。
+
+| 输入 | 作用 |
+| --- | --- |
+| `P` 或按钮「暂停」 | 暂停 / 继续 |
+| `R` 或按钮「重开」 | 重新生成三十条 |
+| `M` 或按钮「换装」 | 回到换装场景 |
+
+画面左上角是剩余条数，以及咬合、冲刺、甩尾的出手次数。
+
+编辑器里三种出手都出现过之后，输出一行：`SlimFramework cutout combat sample smoke OK`。场景继续跑。
+
+## 无头
+
+Godot 4.7.2 .NET 可执行文件，在仓库根目录执行。
+
+换装：
 
 ```bash
 godot --headless --path samples/CutoutSkeletonDemo
 ```
 
-无头时打印上面那一行后退出。
+打印 `SlimFramework cutout skeleton sample smoke OK` 后退出。
+
+对战（从主场景转过去）：
+
+```bash
+godot --headless --path samples/CutoutSkeletonDemo -- --combat
+```
+
+直接打开对战场景也可以：
+
+```bash
+godot --headless --path samples/CutoutSkeletonDemo res://Combat.tscn
+```
+
+两条都会快进同一套状态机，打印 `SlimFramework cutout combat sample smoke OK` 后退出。
 
 ## 工程开关
 
@@ -43,4 +84,4 @@ godot --headless --path samples/CutoutSkeletonDemo
 
 ## 不做
 
-吞食片段、变异叠层、闪光 / 水花 / 受击粒子、转身翻转和挤压、比赛用的 3D 像素化，以及任何自定义骨骼编辑器。
+吞食片段、变异叠层、闪光 / 水花 / 受击粒子、繁殖、玩家指挥单条鱼，以及比赛用的 3D 像素化。没有自定义骨骼编辑器。换装场景不把鱼翻过去；对战里的朝向和倒下只写在这个样例里。

@@ -13,7 +13,17 @@ internal static class OpenOceanFish
     public const string DisplayName = "远洋流线型";
     public const string SwimClip = "swim";
     public const string BiteClip = "bite";
+    public const string LungeClip = "lunge";
+    public const string TailSwipeClip = "tail_swipe";
+    public const string RecoilClip = "recoil";
+    public const double SwimLength = 1.2;
+    public const double BiteLength = 0.34;
+    public const double LungeLength = 0.42;
+    public const double TailSwipeLength = 0.48;
+    public const double RecoilLength = 0.28;
     public const float DisplayScale = 2f;
+
+    public static readonly string[] AttackClips = [BiteClip, LungeClip, TailSwipeClip];
 
     public const string BoneSpineFront = "SpineFront";
     public const string BoneHead = "Head";
@@ -52,7 +62,12 @@ internal static class OpenOceanFish
         SlotTail
     ];
 
-    public static CutoutRigDefinition Definition(OpenOceanParts parts, int mouth, int body, int fin) => new()
+    public static CutoutRigDefinition Definition(
+        OpenOceanParts parts,
+        int mouth,
+        int body,
+        int fin,
+        float sineFrequencyHz = 1.3f) => new()
     {
         Bones =
         [
@@ -80,7 +95,7 @@ internal static class OpenOceanFish
         {
             BoneNames = SineBones,
             AmplitudeRadians = 0.11f,
-            FrequencyHz = 1.3f,
+            FrequencyHz = sineFrequencyHz,
             PhaseStepRadians = 0.6f
         }
     };
@@ -96,31 +111,94 @@ internal static class OpenOceanFish
         rig.SetSlotTexture(SlotTail, parts.Get(SlotTail, fin));
     }
 
-    public static void AddSharedClips(CutoutRig rig)
-    {
-        rig.AddClip(SwimClip, rig.CreateRotationClip(1.2d, loop: true,
-        [
-            new(BoneDorsal, 0d, 0f),
-            new(BoneDorsal, 0.3d, 0.18f),
-            new(BoneDorsal, 0.6d, -0.1f),
-            new(BoneDorsal, 0.9d, 0.16f),
-            new(BoneDorsal, 1.2d, 0f),
-            new(BonePectoral, 0d, 0.2f),
-            new(BonePectoral, 0.3d, -0.28f),
-            new(BonePectoral, 0.6d, 0.32f),
-            new(BonePectoral, 0.9d, -0.06f),
-            new(BonePectoral, 1.2d, 0.2f)
-        ]));
+    /// <summary>冲刺和甩尾要写到正弦骨骼上。播这两段时先关掉这条鱼的正弦，结束后再打开。</summary>
+    public static bool ClipDrivesSpine(string clip) =>
+        clip == LungeClip || clip == TailSwipeClip;
 
-        rig.AddClip(BiteClip, rig.CreateRotationClip(0.34d, loop: false,
-        [
-            new(BoneJaw, 0d, 0f),
-            new(BoneJaw, 0.12d, 0.72f),
-            new(BoneJaw, 0.34d, 0f),
-            new(BoneHead, 0d, 0f),
-            new(BoneHead, 0.12d, -0.1f),
-            new(BoneHead, 0.34d, 0f)
-        ]));
+    public static void AddSharedClips(CutoutRig rig) => BindClipSet(rig, CreateClipSet(rig));
+
+    /// <summary>
+    /// 用这套骨骼路径造一份片段。多条鱼应共用返回的实例，不要按鱼再造一份。
+    /// 路径只含骨架内的骨骼名，同结构的骨架可以播同一份 <see cref="Animation"/>。
+    /// </summary>
+    public static OpenOceanClipSet CreateClipSet(CutoutRig rig)
+    {
+        ArgumentNullException.ThrowIfNull(rig);
+        return new OpenOceanClipSet
+        {
+            Swim = rig.CreateRotationClip(SwimLength, loop: true,
+            [
+                new(BoneDorsal, 0d, 0f),
+                new(BoneDorsal, 0.3d, 0.18f),
+                new(BoneDorsal, 0.6d, -0.1f),
+                new(BoneDorsal, 0.9d, 0.16f),
+                new(BoneDorsal, SwimLength, 0f),
+                new(BonePectoral, 0d, 0.2f),
+                new(BonePectoral, 0.3d, -0.28f),
+                new(BonePectoral, 0.6d, 0.32f),
+                new(BonePectoral, 0.9d, -0.06f),
+                new(BonePectoral, SwimLength, 0.2f)
+            ]),
+            Bite = rig.CreateRotationClip(BiteLength, loop: false,
+            [
+                new(BoneJaw, 0d, 0f),
+                new(BoneJaw, 0.12d, 0.72f),
+                new(BoneJaw, BiteLength, 0f),
+                new(BoneHead, 0d, 0f),
+                new(BoneHead, 0.12d, -0.1f),
+                new(BoneHead, BiteLength, 0f)
+            ]),
+            Lunge = rig.CreateRotationClip(LungeLength, loop: false,
+            [
+                new(BoneHead, 0d, 0f),
+                new(BoneHead, 0.14d, -0.42f),
+                new(BoneHead, LungeLength, 0f),
+                new(BoneJaw, 0d, 0f),
+                new(BoneJaw, 0.16d, 0.85f),
+                new(BoneJaw, 0.30d, 0.2f),
+                new(BoneJaw, LungeLength, 0f),
+                new(BoneSpineFront, 0d, 0f),
+                new(BoneSpineFront, 0.14d, -0.28f),
+                new(BoneSpineFront, LungeLength, 0f)
+            ]),
+            TailSwipe = rig.CreateRotationClip(TailSwipeLength, loop: false,
+            [
+                new(BoneTail, 0d, 0f),
+                new(BoneTail, 0.14d, 0.95f),
+                new(BoneTail, 0.30d, -0.85f),
+                new(BoneTail, TailSwipeLength, 0f),
+                new(BoneSpineTail, 0d, 0f),
+                new(BoneSpineTail, 0.14d, 0.42f),
+                new(BoneSpineTail, 0.30d, -0.38f),
+                new(BoneSpineTail, TailSwipeLength, 0f)
+            ]),
+            Recoil = rig.CreateRotationClip(RecoilLength, loop: false,
+            [
+                new(BoneHead, 0d, 0f),
+                new(BoneHead, 0.08d, 0.38f),
+                new(BoneHead, RecoilLength, 0f),
+                new(BoneJaw, 0d, 0f),
+                new(BoneJaw, 0.10d, -0.15f),
+                new(BoneJaw, RecoilLength, 0f)
+            ])
+        };
+    }
+
+    public static void BindClipSet(CutoutRig rig, OpenOceanClipSet set)
+    {
+        ArgumentNullException.ThrowIfNull(rig);
+        ArgumentNullException.ThrowIfNull(set);
+        Add(rig, SwimClip, set.Swim);
+        Add(rig, BiteClip, set.Bite);
+        Add(rig, LungeClip, set.Lunge);
+        Add(rig, TailSwipeClip, set.TailSwipe);
+        Add(rig, RecoilClip, set.Recoil);
+    }
+
+    private static void Add(CutoutRig rig, string name, Animation clip)
+    {
+        if (!rig.HasClip(name))
+            rig.AddClip(name, clip);
     }
 
     private static CutoutBoneDefinition Bone(string name, string? parent, Vector2 position, float length) => new()
@@ -139,5 +217,29 @@ internal static class OpenOceanFish
         Position = position,
         ZIndex = zIndex,
         Texture = texture
+    };
+}
+
+/// <summary>一条物种共用的片段实例。换贴图不得重新构造。</summary>
+internal sealed class OpenOceanClipSet
+{
+    public required Animation Swim { get; init; }
+
+    public required Animation Bite { get; init; }
+
+    public required Animation Lunge { get; init; }
+
+    public required Animation TailSwipe { get; init; }
+
+    public required Animation Recoil { get; init; }
+
+    public Animation Get(string name) => name switch
+    {
+        OpenOceanFish.SwimClip => Swim,
+        OpenOceanFish.BiteClip => Bite,
+        OpenOceanFish.LungeClip => Lunge,
+        OpenOceanFish.TailSwipeClip => TailSwipe,
+        OpenOceanFish.RecoilClip => Recoil,
+        _ => throw new ArgumentException($"没有片段 {name}。", nameof(name))
     };
 }

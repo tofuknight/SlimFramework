@@ -24,7 +24,7 @@ tools/*           →  SlimFramework.Contracts（不需要 Godot 时可以 → S
 | `SlimFramework.Godot` | `src/SlimFramework.Godot` | `SlimFramework`、`GodotSharp` | `plugins/`、游戏、Demo |
 | `SlimFramework.Demo` | `samples/SlimFramework.Demo` | `SlimFramework`、Contracts | `GodotSharp`、`SlimFramework.Godot`、`DemoGame` |
 | `SlimFramework.DemoGame` | `samples/DemoGame` | 适配层、`SlimFramework.Demo`、可选插件 | 被 `src/`、`plugins/`、`tools/` 引用 |
-| `SlimFramework.CutoutSkeletonDemo` | `samples/CutoutSkeletonDemo` | 适配层、`plugins/CutoutSkeleton` | 被 `src/`、`plugins/`、`tools/` 引用。鱼的部位对照只留在这里 |
+| `SlimFramework.CutoutSkeletonDemo` | `samples/CutoutSkeletonDemo` | 适配层、`plugins/CutoutSkeleton` | 被 `src/`、`plugins/`、`tools/` 引用。鱼的部位对照和对战规则只留在这里 |
 | `Slim.SaveTool` | `tools/Slim.SaveTool` | Contracts | Demo、游戏、适配层 |
 | `Slim.AssetCatalogTool` | `tools/Slim.AssetCatalogTool` | Contracts、`SlimFramework`（调用 `ResourceCatalog.Parse`） | Demo、游戏、适配层、`plugins/` |
 | 插件 | `plugins/<Name>/` | `SlimFramework`，需要引擎类型时再加适配层 | `samples/`、任何游戏工程 |

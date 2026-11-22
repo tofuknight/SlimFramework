@@ -9,7 +9,7 @@
 | `samples/SlimFramework.Demo/` | `SlimFramework.Demo` | 无头示例。`DemoSession`、`DemoPlugin`（`Id` 为 `demo`）、`Protos/demo_profile.proto`、手写表 `Config/`（命名空间 `cfg`）、`Fixtures/tbitem.bytes` |
 | `samples/SlimFramework.Demo.Runner/` | Runner 工程 | `dotnet run` 入口，跑 `DemoSession` |
 | `samples/DemoGame/` | `SlimFramework.DemoGame` | 最小 Godot 工程。`GameRoot` 先跑 `AdapterSmoke`，再跑 `AssetCatalogSmoke`，然后跑 `DemoSession`。资源清单在 `Assets/resource_refs.json` |
-| `samples/CutoutSkeletonDemo/` | `SlimFramework.CutoutSkeletonDemo` | 剪影换装样例。`GameRoot` 在 `base.Configure` 之后 `Use` `CutoutSkeletonPlugin`。鱼的骨骼、三档口 / 体 / 鳍和游动 / 咬合留在这里 |
+| `samples/CutoutSkeletonDemo/` | `SlimFramework.CutoutSkeletonDemo` | 剪影换装和对战样例。`GameRoot` 在 `base.Configure` 之后 `Use` `CutoutSkeletonPlugin`。鱼的骨骼、三档口 / 体 / 鳍、共用片段和对战规则留在这里。对战场景是 `Combat.tscn` |
 | `samples/EmptyGame/` | 不在 `SlimFramework.sln` | 拷到单独游戏仓库的空壳。不要在本仓库里打开或构建 |
 
 `DemoSession` / `DemoPlugin` 是用法样例，不是第二款游戏。关卡、剧情、正式 UI 皮肤、玩法系统不进 `DemoGame`，也不进 `src/`。
@@ -64,7 +64,7 @@ dotnet run --project samples/SlimFramework.Demo.Runner
 
 动了 `samples/DemoGame` 的场景或冒烟时，用 Godot 4.7.2 .NET 打开 `samples/DemoGame/project.godot`，Play `Main.tscn`。必须打出上面两行，且没有 `ScriptTypeBiMap` 重复登记。命令行构建不需要编辑器，也不能代替这次 Play。
 
-动了 `samples/CutoutSkeletonDemo` 时，用 Godot 4.7.2 .NET 打开 `samples/CutoutSkeletonDemo/project.godot`，Play `Main.tscn`。通过标准是打出 `SlimFramework cutout skeleton sample smoke OK`，并且换口、体、鳍后游动和咬合仍是同一套片段。无头是 `godot --headless --path samples/CutoutSkeletonDemo`，打印同一行后退出。这次 Play 不能代替 DemoGame 的 AdapterSmoke。
+动了 `samples/CutoutSkeletonDemo` 时，用 Godot 4.7.2 .NET 打开 `samples/CutoutSkeletonDemo/project.godot`（不要打开仓库根）。换装 Play `Main.tscn`，通过标准是打出 `SlimFramework cutout skeleton sample smoke OK`，并且换口、体、鳍后游动和咬合仍是同一套片段。对战 Play `Combat.tscn`（文件系统里选中后 F6，或在换装界面按 `C`）。无头换装是 `godot --headless --path samples/CutoutSkeletonDemo`，打印上面那一行后退出。无头对战是 `godot --headless --path samples/CutoutSkeletonDemo -- --combat`，或 `godot --headless --path samples/CutoutSkeletonDemo res://Combat.tscn`，打印 `SlimFramework cutout combat sample smoke OK` 后退出。这次 Play 不能代替 DemoGame 的 AdapterSmoke。
 
 ## 常见写错
 

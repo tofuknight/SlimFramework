@@ -83,6 +83,9 @@ internal sealed class OpenOceanCutoutDemo
             case Key.Space:
                 Bite();
                 break;
+            case Key.C:
+                OpenCombat();
+                break;
             default:
                 return;
         }
@@ -115,7 +118,7 @@ internal sealed class OpenOceanCutoutDemo
         layer.AddChild(box);
 
         box.AddChild(new Label { Text = OpenOceanFish.DisplayName });
-        box.AddChild(new Label { Text = "1-3 口     4-6 体     7-9 鳍     Space 咬合" });
+        box.AddChild(new Label { Text = "1-3 口     4-6 体     7-9 鳍     Space 咬合     C 对战" });
         _mouthButtons = AddTierRow(box, "口");
         _bodyButtons = AddTierRow(box, "体");
         _finButtons = AddTierRow(box, "鳍");
@@ -135,6 +138,14 @@ internal sealed class OpenOceanCutoutDemo
         };
         bite.Pressed += Bite;
         box.AddChild(bite);
+        var combat = new Button
+        {
+            Text = "对战",
+            FocusMode = Control.FocusModeEnum.None,
+            CustomMinimumSize = new Vector2(88, 36)
+        };
+        combat.Pressed += OpenCombat;
+        box.AddChild(combat);
         _status = new Label();
         box.AddChild(_status);
     }
@@ -178,6 +189,8 @@ internal sealed class OpenOceanCutoutDemo
     {
         _rig?.Play(OpenOceanFish.BiteClip);
     }
+
+    private void OpenCombat() => _host.GetTree().ChangeSceneToFile(CutoutScenes.Combat);
 
     private void OnAnimationFinished(StringName name)
     {

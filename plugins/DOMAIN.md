@@ -65,7 +65,7 @@
 
 ### CutoutSkeleton
 
-`Register` 不要求已经 `Add` 的服务。取用是 `Get<CutoutSkeletonModule>()`。`Attach` 用调用方给的骨骼表和槽位表建 Godot 内置 `Skeleton2D` / `Bone2D`，槽位是挂在骨骼上的 `Sprite2D`。`SetSlotTexture` 只改该槽的贴图。片段在同一台 `AnimationPlayer` 上，不按贴图复制。`SpineSine` 可选：调用方点名哪些骨骼，每帧把它们的旋转写成静息角加正弦，不改骨骼层级，也不改贴图。均匀尺寸只写根节点的 `Scale`。插件里没有物种、基因或玩法表。
+`Register` 不要求已经 `Add` 的服务。取用是 `Get<CutoutSkeletonModule>()`。`Attach` 用调用方给的骨骼表和槽位表建 Godot 内置 `Skeleton2D` / `Bone2D`，槽位是挂在骨骼上的 `Sprite2D`。`SetSlotTexture` 只改该槽的贴图。片段在同一台 `AnimationPlayer` 上，不按贴图复制。`SpineSine` 可选：调用方点名哪些骨骼，每帧把它们的旋转写成静息角加正弦，不改骨骼层级，也不改贴图。`Tick` 里每套骨架先立刻写一次，再把本帧还在摆动的骨架合成一次空闲补写，避免每套各排一个 `CallDeferred`。直接调用 `Advance` 的单套骨架仍自己推迟一次。均匀尺寸只写根节点的 `Scale`。插件里没有物种、基因或玩法表。
 
 ## 怎么验证
 

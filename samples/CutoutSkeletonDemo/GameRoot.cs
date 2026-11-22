@@ -18,9 +18,26 @@ public partial class GameRoot : SlimBootstrap
 
     protected override void OnAppReady()
     {
+        if (WantsCombatScene())
+        {
+            Callable.From(() => GetTree().ChangeSceneToFile(CutoutScenes.Combat)).CallDeferred();
+            return;
+        }
+
         var app = App ?? throw new InvalidOperationException("SlimApp 尚未挂上。");
         _demo = new OpenOceanCutoutDemo(this, app);
         _demo.Start();
+    }
+
+    private static bool WantsCombatScene()
+    {
+        foreach (var arg in OS.GetCmdlineUserArgs())
+        {
+            if (arg == "--combat")
+                return true;
+        }
+
+        return false;
     }
 
     public override void _UnhandledInput(InputEvent @event) => _demo?.OnInput(@event);

@@ -25,6 +25,7 @@ public sealed class CutoutSkeletonPlugin : IPlugin
 public sealed class CutoutSkeletonModule : IModule, ITickable
 {
     private readonly List<CutoutRig> _rigs = new();
+    private bool _lateQueued;
 
     public void Init(SlimApp app)
     {
@@ -47,8 +48,13 @@ public sealed class CutoutSkeletonModule : IModule, ITickable
         _rigs.Remove(rig);
     }
 
+    /// <summary>
+    /// 推进每套骨架的正弦。本帧只排一次空闲补写，覆盖全部仍在树上的骨架。
+    /// 每套自己 <c>CallDeferred</c> 时，几十套会在同一帧排几十次空闲调用。
+    /// </summary>
     public void Tick(double delta)
     {
+        var writeLate = false;
         for (var i = _rigs.Count - 1; i >= 0; i--)
         {
             var rig = _rigs[i];
@@ -58,7 +64,30 @@ public sealed class CutoutSkeletonModule : IModule, ITickable
                 continue;
             }
 
-            rig.Advance(delta);
+            if (rig.AdvanceImmediate(delta))
+                writeLate = true;
+        }
+
+        if (writeLate)
+            QueueLateWrite();
+    }
+
+    private void QueueLateWrite()
+    {
+        if (_lateQueued)
+            return;
+        _lateQueued = true;
+        Callable.From(LateWriteAll).CallDeferred();
+    }
+
+    private void LateWriteAll()
+    {
+        _lateQueued = false;
+        for (var i = 0; i < _rigs.Count; i++)
+        {
+            var rig = _rigs[i];
+            if (GodotObject.IsInstanceValid(rig.Root))
+                rig.WriteSpinePose();
         }
     }
 }

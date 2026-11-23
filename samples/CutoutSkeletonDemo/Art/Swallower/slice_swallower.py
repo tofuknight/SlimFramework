@@ -4,8 +4,9 @@
 原图像素头在右侧，和样例静息朝向 +X 一致，切片时不翻转。
 关节处各留约 2 像素重叠。张嘴会露出的地方用邻近色填上，不留透明洞。
 臀鳍单独成 parts/anal_fin.png，枢轴在肚皮上的鳍根，运行时挂到 SpineTail。
+臀鳍的源像素只允许出现在这一张图里。尾不再吃掉它的前缘。
 身体贴图在臀鳍那一块改成肚皮色，不把鳍的像素再画一遍。
-下颌盖住的像素留在头上，填成口腔色。
+下颌盖住的像素留在头上，填成口腔色。胸鳍在下颌下多盖 1 像素。
 胸鳍仍是自己的部件。背鳍、胸鳍、尾鳍都绕自己的根，不把另一段的鳍带在身上。
 
 用法（在仓库根目录）：
@@ -140,19 +141,34 @@ def opaque(rows: list[bytearray], x: int, y: int) -> bool:
     return pixel(rows, x, y)[3] > 16
 
 
+def is_anal_fin(x: int, y: int, rows: list[bytearray], width: int, height: int) -> bool:
+    """臀鳍本体。前缘在 x=43 附近，不能让尾的下缘规则把它抢走。"""
+    if not (0 <= x < width and 0 <= y < height) or not opaque(rows, x, y):
+        return False
+    # 垂下的那一叶，含原先被标成尾的 x=43、44。
+    if 41 <= y <= 47 and 43 <= x <= 52:
+        return True
+    # 叶根上方的前缘。y<=40 且 x>=47 是肚皮，不是鳍。
+    if 39 <= y <= 40 and 43 <= x <= 46:
+        return True
+    if y == 48 and 43 <= x <= 46:
+        return True
+    return False
+
+
 def primary(x: int, y: int, rows: list[bytearray], width: int, height: int) -> str | None:
     if not (0 <= x < width and 0 <= y < height) or not opaque(rows, x, y):
         return None
+    # 臀鳍先于尾。尾的下缘只到 x<=42，前缘留给臀鳍。
+    if is_anal_fin(x, y, rows, width, height):
+        return "Anal"
     # 叉形尾鳍在左侧，尾柄大约在 x=40。
-    if x <= 40 or (x <= 44 and (y <= 28 or y >= 40)):
+    if x <= 40 or (x <= 44 and y <= 28) or (x <= 42 and y >= 40):
         return "Tail"
     if y <= 19 and 50 <= x <= 84:
         return "Dorsal"
-    # 下缘有三叶。靠近尾柄的那一叶是臀鳍，和后面两叶之间有空隙。
-    # 只切 y<=47、x<=52，避免把腹鳍尖收进臀鳍。
+    # 下缘剩下的两叶是胸鳍。腹鳍尖不要收进臀鳍。
     if y >= 41 and 40 <= x <= 90:
-        if x <= 52 and y <= 47:
-            return "Anal"
         return "Pectoral"
     if x >= 84 and 32 <= y <= 40:
         return "Jaw"
@@ -181,8 +197,18 @@ def build_masks(width: int, height: int, rows: list[bytearray]) -> dict[str, lis
                         if max(abs(dx), abs(dy)) > 2:
                             continue
                         nx, ny = x + dx, y + dy
-                        if 0 <= nx < width and 0 <= ny < height and opaque(rows, nx, ny):
-                            grown[name][ny][nx] = True
+                        if not (0 <= nx < width and 0 <= ny < height) or not opaque(rows, nx, ny):
+                            continue
+                        # 臀鳍源像素不扩进别的部件。
+                        if name != "Anal" and is_anal_fin(nx, ny, rows, width, height):
+                            continue
+                        grown[name][ny][nx] = True
+    # 下颌和胸鳍之间补一行，小角度张开时不露出 1 像素缝。
+    for y in range(1, height):
+        for x in range(78, width):
+            if grown["Pectoral"][y][x] and opaque(rows, x, y - 1) and not grown["Pectoral"][y - 1][x]:
+                if not is_anal_fin(x, y - 1, rows, width, height):
+                    grown["Pectoral"][y - 1][x] = True
     # 下颌张开会离开的像素留在头上，张嘴才不会露出空背景。
     for y in range(height):
         for x in range(width):
@@ -273,6 +299,36 @@ def body_polygon(mask: list[list[bool]], width: int, height: int) -> list[list[i
     return unique
 
 
+def audit_anal(painted: dict[str, tuple], rows: list[bytearray], width: int, height: int) -> int:
+    """每颗臀鳍源像素必须原色出现在且只出现在 anal 部件里。"""
+    sources: dict[tuple[int, int], tuple[int, int, int, int]] = {}
+    for y in range(height):
+        for x in range(width):
+            if is_anal_fin(x, y, rows, width, height):
+                sources[(x, y)] = pixel(rows, x, y)
+    found: dict[tuple[int, int], list[str]] = {xy: [] for xy in sources}
+    for name, (min_x, min_y, _crop_w, _crop_h, image) in painted.items():
+        for ly, row in enumerate(image):
+            for lx in range(len(row) // 4):
+                color = pixel_row(row, lx)
+                if color[3] <= 16:
+                    continue
+                xy = (min_x + lx, min_y + ly)
+                if xy in sources and color == sources[xy]:
+                    found[xy].append(name)
+    bad = [(xy, names) for xy, names in found.items() if names != ["Anal"]]
+    if bad:
+        sample = ", ".join(f"{xy}→{names}" for xy, names in bad[:8])
+        raise SystemExit(f"臀鳍源像素没有只落在 anal 上：{len(bad)} 颗。例如 {sample}")
+    print(f"anal audit {len(sources)} source pixels, each only in anal")
+    return len(sources)
+
+
+def pixel_row(row: bytearray, x: int) -> tuple[int, int, int, int]:
+    offset = x * 4
+    return tuple(row[offset : offset + 4])  # type: ignore[return-value]
+
+
 def main() -> None:
     width, height, rows = read_png(FULL)
     masks = build_masks(width, height, rows)
@@ -288,8 +344,12 @@ def main() -> None:
         "Anal": [48, 40],
         "Tail": [40, 33],
     }
-    for name in RULES:
-        min_x, min_y, crop_w, crop_h, image = paint_part(name, rows, masks[name], width, height)
+    painted = {
+        name: paint_part(name, rows, masks[name], width, height)
+        for name in RULES
+    }
+    audit_anal(painted, rows, width, height)
+    for name, (min_x, min_y, crop_w, crop_h, image) in painted.items():
         file_name = PART_FILES.get(name, f"parts/{name.lower()}.png")
         write_png(ROOT / file_name, crop_w, crop_h, [bytes(row) for row in image])
         pivot = pivots[name]
@@ -318,7 +378,7 @@ def main() -> None:
         "size": [width, height],
         "facing": "+X",
         "anchor": {"bone": "SpineFront", "image": list(ANCHOR)},
-        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍挂在 SpineTail 上。身体在臀鳍范围内填肚皮色，不重复鳍的像素。下颌底下的像素留在头上，填口腔色。",
+        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍源像素只在 anal_fin.png。尾的下缘停在 x<=42。身体重叠处填肚皮色。胸鳍在下颌下多 1 像素。",
         "parts": parts,
         "bones": [{"name": name, "parent": parent, "image": image} for name, parent, image in bones],
         "bodyPolygon": body_polygon(masks["Body"], width, height),

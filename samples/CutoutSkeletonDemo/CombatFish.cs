@@ -45,10 +45,11 @@ internal sealed class CombatFish
     private float _shoveLeft;
     private readonly ShaderMaterial _flashMaterial;
 
-    public CombatFish(CutoutRig rig, int bodyTier, string preferredAttack, float speed)
+    public CombatFish(CutoutRig rig, int bodyTier, string preferredAttack, float speed, string species)
     {
         Rig = rig;
         BodyTier = bodyTier;
+        Species = species;
         _preferredAttack = preferredAttack;
         Speed = speed;
         _flashMaterial = FishFlash.CreateMaterial();
@@ -59,6 +60,8 @@ internal sealed class CombatFish
     public CutoutRig Rig { get; }
 
     public int BodyTier { get; }
+
+    public string Species { get; }
 
     public float Speed { get; }
 

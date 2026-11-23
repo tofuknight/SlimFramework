@@ -24,6 +24,7 @@ internal static class CutoutSampleSmoke
     public static void Run(SlimApp app, CutoutRig rig, OpenOceanParts parts, int mouth, int body, int fin, Node host)
     {
         app.Get<CutoutSkeletonModule>();
+        ExpectSwallower(app, rig, host);
         Expect(rig.BoneCount == 9, $"骨骼数是 {rig.BoneCount}，应当是 9。");
         Expect(rig.Skeleton.GetBoneCount() == rig.BoneCount, $"Skeleton2D 登记了 {rig.Skeleton.GetBoneCount()} 根骨头。");
         Expect(rig.Skeleton.Name == CutoutRig.SkeletonNodeName, "骨架节点名不对。");
@@ -136,6 +137,35 @@ internal static class CutoutSampleSmoke
         {
             GD.PushError(ex.ToString());
             host.GetTree()?.Quit(1);
+        }
+    }
+
+    private static void ExpectSwallower(SlimApp app, CutoutRig placeholder, Node host)
+    {
+        var slice = SwallowerFish.Slice;
+        Expect(slice.Head.GetWidth() > 8, "吞食者的头没有读到。");
+        Expect(slice.Jaw.GetHeight() > 4, "吞食者的下颌没有读到。");
+        Expect(slice.Body.GetWidth() > 8, "吞食者的身体没有读到。");
+        Expect(slice.Dorsal.GetWidth() > 4, "吞食者的背鳍没有读到。");
+        Expect(slice.Pectoral.GetWidth() > 4, "吞食者的胸鳍没有读到。");
+        Expect(slice.Tail.GetWidth() > 8, "吞食者的尾鳍没有读到。");
+        Expect(slice.BodySkin.Vertices.Length >= 8, "吞食者的身体轮廓太短。");
+        var module = app.Get<CutoutSkeletonModule>();
+        var probe = module.Attach(host, SwallowerFish.Definition(), "SwallowerProbe");
+        try
+        {
+            Expect(probe.BoneCount == 9, $"吞食者骨骼数是 {probe.BoneCount}。");
+            Expect(probe.BonePath(OpenOceanFish.BoneJaw).ToString() == placeholder.BonePath(OpenOceanFish.BoneJaw).ToString(), "吞食者的下颌路径和共用片段不一致。");
+            Expect(probe.BonePath(OpenOceanFish.BoneTail).ToString() == placeholder.BonePath(OpenOceanFish.BoneTail).ToString(), "吞食者的尾路径和共用片段不一致。");
+            Expect(probe.GetBone(OpenOceanFish.BoneHead).GetParent() == probe.GetBone(OpenOceanFish.BoneSpineFront), "吞食者的头没有跟着脊柱前段。");
+            var body = probe.GetSkinnedSlot(OpenOceanFish.SlotBody);
+            Expect(body.GetBoneCount() == 4, "吞食者的身体没有绑上脊柱。");
+            Expect(body.Texture == slice.Body, "吞食者的身体贴图不是切片。");
+        }
+        finally
+        {
+            module.Detach(probe);
+            probe.Root.Free();
         }
     }
 

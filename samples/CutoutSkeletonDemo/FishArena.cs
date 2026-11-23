@@ -308,23 +308,28 @@ internal sealed class FishArena
         var body = _random.Next(PlaceholderCutouts.TierCount);
         var fin = _random.Next(PlaceholderCutouts.TierCount);
         var frequency = 1.05f + (float)_random.NextDouble() * 0.5f;
+        var swallower = index % 2 == 0;
         var module = _app.Get<CutoutSkeletonModule>();
         var rig = module.Attach(
             _host,
-            OpenOceanFish.Definition(_parts, mouth, body, fin, frequency),
+            swallower
+                ? SwallowerFish.Definition(frequency)
+                : OpenOceanFish.Definition(_parts, mouth, body, fin, frequency),
             $"Fish{index:00}");
         rig.Root.ProcessMode = Node.ProcessModeEnum.Pausable;
         rig.Root.ZIndex = 1;
-        rig.Root.Position = SpawnPoint(index);
+        var spawn = SpawnPoint(index);
+        rig.Root.Position = swallower ? new Vector2(Mathf.Round(spawn.X), Mathf.Round(spawn.Y)) : spawn;
         rig.Root.Rotation = (float)(_random.NextDouble() * Mathf.Tau);
-        rig.SetUniformScale(0.56f + (float)_random.NextDouble() * 0.3f);
+        rig.SetUniformScale(swallower ? SwallowerFish.CombatScale : 0.56f + (float)_random.NextDouble() * 0.3f);
         rig.Root.Modulate = Colors.White;
         foreach (var slot in rig.SlotIds)
             rig.GetSlotNode(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
 
         var speed = 112f + (float)_random.NextDouble() * 56f;
         var preferred = OpenOceanFish.AttackClips[index % OpenOceanFish.AttackClips.Length];
-        return new CombatFish(rig, body, preferred, speed);
+        var species = swallower ? SwallowerFish.SpeciesName : "OpenOcean";
+        return new CombatFish(rig, body, preferred, speed, species);
     }
 
     private Vector2 SpawnPoint(int index)

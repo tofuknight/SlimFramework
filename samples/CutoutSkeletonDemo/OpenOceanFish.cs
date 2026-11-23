@@ -221,7 +221,7 @@ internal static class OpenOceanFish
         Length = length
     };
 
-    private static CutoutSlotDefinition Slot(string id, string bone, Vector2 position, int zIndex, Texture2D texture) => new()
+    internal static CutoutSlotDefinition Slot(string id, string bone, Vector2 position, int zIndex, Texture2D texture) => new()
     {
         Id = id,
         Bone = bone,
@@ -230,7 +230,7 @@ internal static class OpenOceanFish
         Texture = texture
     };
 
-    private static CutoutSlotDefinition SkinSlot(string id, int zIndex, Texture2D texture, CutoutSkinDefinition skin) => new()
+    internal static CutoutSlotDefinition SkinSlot(string id, int zIndex, Texture2D texture, CutoutSkinDefinition skin) => new()
     {
         Id = id,
         ZIndex = zIndex,

@@ -14,6 +14,8 @@ internal sealed class OpenOceanCutoutDemo
     private readonly SlimApp _app;
     private readonly OpenOceanParts _parts = new();
     private CutoutRig? _rig;
+    private OpenOceanClipSet? _clips;
+    private Label? _title;
     private Label? _status;
     private Button[]? _mouthButtons;
     private Button[]? _bodyButtons;
@@ -21,6 +23,7 @@ internal sealed class OpenOceanCutoutDemo
     private int _mouth;
     private int _body = 1;
     private int _fin = 2;
+    private bool _swallower;
     private bool _returningToSwim;
 
     public OpenOceanCutoutDemo(Node host, SlimApp app)
@@ -31,14 +34,9 @@ internal sealed class OpenOceanCutoutDemo
 
     public void Start()
     {
-        var module = _app.Get<CutoutSkeletonModule>();
-        _rig = module.Attach(_host, OpenOceanFish.Definition(_parts, _mouth, _body, _fin), OpenOceanFish.RootName);
-        _rig.Root.Position = new Vector2(760, 390);
-        _rig.SetUniformScale(OpenOceanFish.DisplayScale);
-        foreach (var slot in _rig.SlotIds)
-            _rig.GetSlotNode(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-
-        OpenOceanFish.AddSharedClips(_rig);
+        _rig = AttachRig(OpenOceanFish.Definition(_parts, _mouth, _body, _fin), OpenOceanFish.DisplayScale);
+        _clips = OpenOceanFish.CreateClipSet(_rig);
+        OpenOceanFish.BindClipSet(_rig, _clips);
         _rig.Player.AnimationFinished += OnAnimationFinished;
         BuildUi();
         _rig.Play(OpenOceanFish.SwimClip);
@@ -86,6 +84,9 @@ internal sealed class OpenOceanCutoutDemo
             case Key.C:
                 OpenCombat();
                 break;
+            case Key.V:
+                ToggleSpecies();
+                break;
             default:
                 return;
         }
@@ -103,7 +104,9 @@ internal sealed class OpenOceanCutoutDemo
             OpenOceanFish.BiteClip => "咬合",
             _ => _rig.CurrentClip
         };
-        _status.Text = $"口 {_mouth + 1}    体 {_body + 1}    鳍 {_fin + 1}    {clip}";
+        _status.Text = _swallower
+            ? $"{SwallowerFish.DisplayName}    {clip}"
+            : $"口 {_mouth + 1}    体 {_body + 1}    鳍 {_fin + 1}    {clip}";
     }
 
     private void BuildUi()
@@ -117,8 +120,9 @@ internal sealed class OpenOceanCutoutDemo
         box.AddThemeConstantOverride("separation", 6);
         layer.AddChild(box);
 
-        box.AddChild(new Label { Text = OpenOceanFish.DisplayName });
-        box.AddChild(new Label { Text = "1-3 口     4-6 体     7-9 鳍     Space 咬合     C 对战" });
+        _title = new Label { Text = OpenOceanFish.DisplayName };
+        box.AddChild(_title);
+        box.AddChild(new Label { Text = "1-3 口     4-6 体     7-9 鳍     V 物种     Space 咬合     C 对战" });
         _mouthButtons = AddTierRow(box, "口");
         _bodyButtons = AddTierRow(box, "体");
         _finButtons = AddTierRow(box, "鳍");
@@ -138,6 +142,14 @@ internal sealed class OpenOceanCutoutDemo
         };
         bite.Pressed += Bite;
         box.AddChild(bite);
+        var species = new Button
+        {
+            Text = "物种",
+            FocusMode = Control.FocusModeEnum.None,
+            CustomMinimumSize = new Vector2(88, 36)
+        };
+        species.Pressed += ToggleSpecies;
+        box.AddChild(species);
         var combat = new Button
         {
             Text = "对战",
@@ -170,6 +182,37 @@ internal sealed class OpenOceanCutoutDemo
         return buttons;
     }
 
+    private CutoutRig AttachRig(CutoutRigDefinition definition, float scale)
+    {
+        var module = _app.Get<CutoutSkeletonModule>();
+        var rig = module.Attach(_host, definition, OpenOceanFish.RootName);
+        rig.Root.Position = new Vector2(760, 390);
+        rig.SetUniformScale(scale);
+        foreach (var slot in rig.SlotIds)
+            rig.GetSlotNode(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+        return rig;
+    }
+
+    private void ToggleSpecies()
+    {
+        if (_rig == null || _clips == null)
+            return;
+        _swallower = !_swallower;
+        _rig.Player.AnimationFinished -= OnAnimationFinished;
+        var module = _app.Get<CutoutSkeletonModule>();
+        module.Detach(_rig);
+        _rig.Root.Free();
+        _rig = AttachRig(
+            _swallower ? SwallowerFish.Definition() : OpenOceanFish.Definition(_parts, _mouth, _body, _fin),
+            _swallower ? SwallowerFish.DisplayScale : OpenOceanFish.DisplayScale);
+        OpenOceanFish.BindClipSet(_rig, _clips);
+        _rig.Player.AnimationFinished += OnAnimationFinished;
+        _rig.Play(OpenOceanFish.SwimClip);
+        if (_title != null)
+            _title.Text = _swallower ? SwallowerFish.DisplayName : OpenOceanFish.DisplayName;
+        RefreshButtons();
+    }
+
     private void SetMouth(int tier) => SetTier(ref _mouth, tier);
 
     private void SetBody(int tier) => SetTier(ref _body, tier);
@@ -178,7 +221,7 @@ internal sealed class OpenOceanCutoutDemo
 
     private void SetTier(ref int slot, int tier)
     {
-        if (_rig == null || tier < 0 || tier >= PlaceholderCutouts.TierCount)
+        if (_rig == null || _swallower || tier < 0 || tier >= PlaceholderCutouts.TierCount)
             return;
         slot = tier;
         OpenOceanFish.Apply(_rig, _parts, _mouth, _body, _fin);
@@ -208,11 +251,11 @@ internal sealed class OpenOceanCutoutDemo
         Mark(_finButtons, _fin);
     }
 
-    private static void Mark(Button[]? buttons, int selected)
+    private void Mark(Button[]? buttons, int selected)
     {
         if (buttons == null)
             return;
         for (var i = 0; i < buttons.Length; i++)
-            buttons[i].Disabled = i == selected;
+            buttons[i].Disabled = _swallower || i == selected;
     }
 }

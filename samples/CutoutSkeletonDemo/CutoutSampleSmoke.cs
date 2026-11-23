@@ -5,7 +5,7 @@ using SlimFramework.CutoutSkeleton;
 namespace SlimFramework.CutoutSkeletonDemo;
 
 /// <summary>
-/// 进场景后核对：换装只改贴图，片段还是那两段，正弦只摆脊柱链。
+/// 进场景后核对：换装只改贴图，身体是蒙皮，正弦是一条传到尾巴的波。
 /// 无头运行时打印通过行并退出。编辑器 Play 不退出。
 /// </summary>
 internal static class CutoutSampleSmoke
@@ -16,7 +16,6 @@ internal static class CutoutSampleSmoke
     [
         (OpenOceanFish.SlotJaw, OpenOceanFish.BoneJaw),
         (OpenOceanFish.SlotHead, OpenOceanFish.BoneHead),
-        (OpenOceanFish.SlotBody, OpenOceanFish.BoneSpineFront),
         (OpenOceanFish.SlotRidge, OpenOceanFish.BoneRidge),
         (OpenOceanFish.SlotDorsal, OpenOceanFish.BoneDorsal),
         (OpenOceanFish.SlotPectoral, OpenOceanFish.BonePectoral),
@@ -43,6 +42,7 @@ internal static class CutoutSampleSmoke
         ExpectParent(rig, OpenOceanFish.BoneTail, OpenOceanFish.BoneSpineTail);
         foreach (var (slot, bone) in SlotBones)
             Expect(rig.GetSlot(slot).GetParent() == rig.GetBone(bone), $"槽位 {slot} 没有挂在 {bone} 上。");
+        var skinnedBody = ExpectSkinnedBody(rig);
 
         var rests = SnapshotRests(rig);
         var swim = rig.GetClip(OpenOceanFish.SwimClip);
@@ -53,8 +53,10 @@ internal static class CutoutSampleSmoke
         ExpectRotationTracks(bite);
 
         var marker = Marker();
+        var bodyId = skinnedBody.GetInstanceId();
         foreach (var slot in OpenOceanFish.SlotIds)
             rig.SetSlotTexture(slot, marker);
+        Expect(rig.GetSkinnedSlot(OpenOceanFish.SlotBody).GetInstanceId() == bodyId, "换装换成了另一块身体。");
         ExpectSameRests(rests, rig, "换装改了骨骼静息。");
         Expect(rig.Skeleton.GetBoneCount() == rig.BoneCount, "换装改了骨骼数量。");
         foreach (var (slot, bone) in SlotBones)
@@ -70,6 +72,12 @@ internal static class CutoutSampleSmoke
 
         rig.SetUniformScale(2.5f);
         Expect(rig.Root.Scale.IsEqualApprox(new Vector2(2.5f, 2.5f)), "根缩放不是均匀的。");
+        rig.Root.Scale = new Vector2(2.5f, -2.5f);
+        rig.SetUniformScale(3f);
+        Expect(rig.Root.Scale.IsEqualApprox(new Vector2(3f, -3f)), "均匀缩放抹掉了朝向。");
+        rig.Root.Scale = new Vector2(3f, 3f);
+        rig.SetUniformScale(2.5f);
+        Expect(rig.Root.Scale.IsEqualApprox(new Vector2(2.5f, 2.5f)), "朝向恢复后缩放不是均匀的。");
         foreach (var name in rig.BoneNames)
             Expect(rig.GetBone(name).Scale.IsEqualApprox(Vector2.One), $"骨骼 {name} 的局部缩放被改了。");
         ExpectSameRests(rests, rig, "根缩放改了骨骼静息。");
@@ -82,9 +90,9 @@ internal static class CutoutSampleSmoke
         ExpectSameRests(rests, rig, "关闭正弦改了静息。");
 
         rig.SetSpineSineEnabled(true);
-        app.TickFrame(0.37d);
-        Expect(SineMoved(rig, parked), "正弦没有推动脊柱链。");
-        Expect(Mathf.Abs(rig.GetBone(OpenOceanFish.BoneHead).Rotation - parked[OpenOceanFish.BoneHead]) < 0.02f, "正弦改到了头。");
+        const double waveTime = 0.18d;
+        app.TickFrame(waveTime);
+        ExpectTravellingWave(rig, waveTime);
         Expect(Mathf.Abs(rig.GetBone(OpenOceanFish.BoneJaw).Rotation - parked[OpenOceanFish.BoneJaw]) < 0.02f, "正弦改到了下颌。");
         ExpectSameRests(rests, rig, "正弦改了骨骼静息。");
 
@@ -124,6 +132,41 @@ internal static class CutoutSampleSmoke
             GD.PushError(ex.ToString());
             host.GetTree()?.Quit(1);
         }
+    }
+
+    private static Polygon2D ExpectSkinnedBody(CutoutRig rig)
+    {
+        var body = rig.GetSkinnedSlot(OpenOceanFish.SlotBody);
+        Expect(body.GetParent() == rig.Skeleton, "身体没有挂在骨架上。");
+        Expect(body.Polygon.Length == OpenOceanBody.Vertices.Length, "身体顶点数不对。");
+        Expect(body.GetBoneCount() == 4, $"身体绑了 {body.GetBoneCount()} 根骨头。");
+        Expect(body.GetBonePath(0).ToString() == OpenOceanFish.BoneSpineFront, "身体第一根骨头不是脊柱前段。");
+        Expect(body.GetBoneWeights(0).Length == body.Polygon.Length, "身体权重数量不对。");
+        Expect(body.UV.Length == body.Polygon.Length, "身体 UV 数量不对。");
+        return body;
+    }
+
+    private static void ExpectTravellingWave(CutoutRig rig, double time)
+    {
+        var tail = 0f;
+        var front = 0f;
+        var head = 0f;
+        for (var i = 0; i < OpenOceanFish.SineBones.Length; i++)
+        {
+            var expected = OpenOceanFish.SineAmplitude * OpenOceanFish.SineAmplitudeScales[i]
+                * Mathf.Sin(((float)time * OpenOceanFish.SineFrequency * Mathf.Tau) + (i * OpenOceanFish.SinePhaseStep));
+            var actual = rig.GetBone(OpenOceanFish.SineBones[i]).Rotation;
+            Expect(Mathf.Abs(actual - expected) < 0.02f, $"{OpenOceanFish.SineBones[i]} 的摆动是 {actual}，应当接近 {expected}。");
+            if (OpenOceanFish.SineBones[i] == OpenOceanFish.BoneTail)
+                tail = actual;
+            if (OpenOceanFish.SineBones[i] == OpenOceanFish.BoneSpineFront)
+                front = actual;
+            if (OpenOceanFish.SineBones[i] == OpenOceanFish.BoneHead)
+                head = actual;
+        }
+
+        Expect(Mathf.Abs(tail) > Mathf.Abs(front) + 0.05f, "尾巴的振幅没有比身体前段大。");
+        Expect(head * front < 0f, "头没有对着身体的波。");
     }
 
     private static bool SineMoved(CutoutRig rig, Dictionary<string, float> parked)

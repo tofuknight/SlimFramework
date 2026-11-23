@@ -33,7 +33,10 @@ internal static class CutoutCombatSmoke
         {
             Expect(fish.Rig.BoneCount == 9, $"骨骼数是 {fish.Rig.BoneCount}。");
             Expect(fish.Rig.SlotIds.Count == OpenOceanFish.SlotIds.Length, "槽位数不对。");
-            Expect(fish.Rig.Root.Scale.Y > 0f, "开场时根缩放被翻过去了。");
+            var body = fish.Rig.GetSkinnedSlot(OpenOceanFish.SlotBody);
+            Expect(body.GetParent() == fish.Rig.Skeleton, "身体没有挂在骨架上。");
+            Expect(body.GetBoneCount() == 4, "身体没有绑上脊柱。");
+            Expect(FishFacing.IsBellyDown(fish.Rig), "开场就有鱼肚皮朝上。");
         }
     }
 
@@ -67,10 +70,13 @@ internal static class CutoutCombatSmoke
     {
         AssertSpawned(arena);
         AssertShared(arena);
-        for (var i = 0; i < 360 && !AttacksSatisfied(arena); i++)
+        ProbeFacing(arena.Fish[0]);
+        for (var i = 0; i < 360; i++)
         {
             arena.App.TickFrame(1.0 / 60.0);
             arena.Step(1.0 / 60.0);
+            if (AttacksSatisfied(arena) && arena.SawWave && arena.FlashStarts >= 1 && arena.SawBrightFlash)
+                break;
         }
 
         if (!AttacksSatisfied(arena))
@@ -78,6 +84,10 @@ internal static class CutoutCombatSmoke
             throw new InvalidOperationException(
                 $"对战没有打全出手：咬合 {arena.BitePlays}/{arena.VerifiedBite}，冲刺 {arena.LungePlays}/{arena.VerifiedLunge}，甩尾 {arena.TailPlays}/{arena.VerifiedTail}。");
         }
+
+        Expect(!arena.SawBellyUpAlive, "对战里有活鱼肚皮朝上。");
+        Expect(arena.SawWave, "脊柱没有弯出身体的波。");
+        Expect(arena.FlashStarts >= 1 && arena.SawBrightFlash, $"没有看到受击闪白（{arena.FlashStarts}）。");
 
         AssertShared(arena);
         Callable.From(() => Finish(arena, host)).CallDeferred();
@@ -101,6 +111,29 @@ internal static class CutoutCombatSmoke
             GD.PushError(ex.ToString());
             host.GetTree()?.Quit(1);
         }
+    }
+
+    private static void ProbeFacing(CombatFish fish)
+    {
+        var heading = fish.Rig.Root.Rotation;
+        fish.FaceForSmoke(0f, bellyUp: false);
+        Expect(FishFacing.IsBellyDown(fish.Rig), "朝右时肚皮朝上。");
+        Expect(fish.Rig.Root.Scale.Y > 0f, "朝右时不该翻 Y。");
+        fish.FaceForSmoke(Mathf.Acos(-0.05f), bellyUp: false);
+        Expect(fish.Rig.Root.Scale.Y > 0f, "还没明显朝左就翻了。");
+        fish.FaceForSmoke(Mathf.Acos(-0.5f), bellyUp: false);
+        Expect(fish.Rig.Root.Scale.Y < 0f, "明显朝左时没有翻 Y。");
+        Expect(FishFacing.IsBellyDown(fish.Rig), "朝左翻过去以后肚皮朝上。");
+        fish.FaceForSmoke(Mathf.Pi, bellyUp: false);
+        Expect(FishFacing.IsBellyDown(fish.Rig), "朝左时肚皮朝上。");
+        Expect(fish.Rig.Root.Scale.Y < 0f, "朝左时没有翻 Y。");
+        fish.FaceForSmoke(Mathf.Pi, bellyUp: true);
+        Expect(!FishFacing.IsBellyDown(fish.Rig), "朝左倒下后肚皮仍朝下。");
+        fish.FaceForSmoke(0f, bellyUp: true);
+        Expect(fish.Rig.Root.Scale.Y < 0f, "朝右倒下后没有把肚皮翻上去。");
+        Expect(!FishFacing.IsBellyDown(fish.Rig), "朝右倒下后肚皮仍朝下。");
+        fish.FaceForSmoke(heading, bellyUp: false);
+        Expect(FishFacing.IsBellyDown(fish.Rig), "朝向探针没有把鱼放回肚皮朝下。");
     }
 
     private static bool ShouldQuitAfterSmoke()

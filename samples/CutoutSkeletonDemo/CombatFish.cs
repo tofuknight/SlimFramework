@@ -31,9 +31,14 @@ internal sealed class CombatFish
     private string? _clip;
     private bool _dealsDamage;
     private bool _hitDone;
+    private bool _hitCommitted;
     private double _timer;
     private double _length;
     private float _fade = 1f;
+    private bool _mirrored;
+    private bool _bellyUp;
+    private float _flash;
+    private readonly ShaderMaterial _flashMaterial;
 
     public CombatFish(CutoutRig rig, int bodyTier, string preferredAttack, float speed)
     {
@@ -41,6 +46,9 @@ internal sealed class CombatFish
         BodyTier = bodyTier;
         _preferredAttack = preferredAttack;
         Speed = speed;
+        _flashMaterial = FishFlash.CreateMaterial();
+        foreach (var slot in rig.SlotIds)
+            rig.GetSlotNode(slot).Material = _flashMaterial;
     }
 
     public CutoutRig Rig { get; }
@@ -57,18 +65,37 @@ internal sealed class CombatFish
 
     public string? ActiveClip => _mind == Mind.Attack ? _clip : null;
 
+    public int FlashStarts { get; private set; }
+
+    public float FlashAmount
+    {
+        get
+        {
+            var value = _flashMaterial.GetShaderParameter(FishFlash.Parameter);
+            return value.VariantType == Variant.Type.Nil ? 0f : value.AsSingle();
+        }
+    }
+
     public Vector2 Position => Rig.Root.Position;
 
     public void Boot(FishArena arena)
     {
         _wanderPoint = arena.RandomPoint();
         _wanderTimer = 0.4 + arena.NextDouble() * 1.2;
+        Face(Rig.Root.Rotation);
         _velocity = Vector2.Right.Rotated(Rig.Root.Rotation) * (Speed * 0.35f);
         Rig.Play(OpenOceanFish.SwimClip);
     }
 
+    public void FaceForSmoke(float heading, bool bellyUp)
+    {
+        _bellyUp = bellyUp;
+        Face(heading);
+    }
+
     public void Step(double dt, FishArena arena)
     {
+        DecayFlash(dt);
         if (_mind == Mind.KnockedOut)
         {
             Sink(dt, arena);
@@ -89,11 +116,15 @@ internal sealed class CombatFish
         }
     }
 
-    public void TakeHit(FishArena arena)
+    public void TakeHit(FishArena arena, Vector2 from)
     {
         if (!Alive)
             return;
         Hp--;
+        StartFlash();
+        var away = Position - from;
+        if (away.LengthSquared() > 4f)
+            _velocity += away.Normalized() * 60f;
         if (Hp <= 0)
         {
             KnockOut();
@@ -221,6 +252,7 @@ internal sealed class CombatFish
         }
 
         var to = _target.Position - Position;
+        _hitCommitted = to.LengthSquared() <= AttackRange * AttackRange;
         var forward = Vector2.Right.Rotated(Rig.Root.Rotation);
         var behind = to.LengthSquared() > 1f && forward.Dot(to.Normalized()) < -0.2f;
         string clip;
@@ -230,7 +262,7 @@ internal sealed class CombatFish
         {
             clip = arena.NextDouble() < 0.8 ? _preferredAttack : arena.RandomAttack();
             if (to.LengthSquared() > 1f)
-                Rig.Root.Rotation = to.Angle();
+                Face(to.Angle());
         }
 
         BeginClip(arena, clip, dealsDamage: true);
@@ -244,7 +276,7 @@ internal sealed class CombatFish
         _hitDone = false;
         _timer = 0d;
         _length = arena.Clips.Get(clip).Length;
-        Rig.SetSpineSineEnabled(!OpenOceanFish.ClipDrivesSpine(clip));
+        Rig.SetSpineSineEnabled(!OpenOceanFish.SuspendsSpineSine(clip));
         Rig.Play(clip);
         if (dealsDamage)
             arena.NotifyAttack(clip);
@@ -252,11 +284,11 @@ internal sealed class CombatFish
 
     private void TryHit(FishArena arena)
     {
-        if (_target == null || !_target.Alive)
+        if (!_hitCommitted || _target == null || !_target.Alive)
             return;
-        if (Position.DistanceSquaredTo(_target.Position) > AttackRange * AttackRange * 1.44f)
+        if (Position.DistanceSquaredTo(_target.Position) > AttackRange * AttackRange * 4f)
             return;
-        _target.TakeHit(arena);
+        _target.TakeHit(arena, Position);
     }
 
     private void FinishClip()
@@ -278,8 +310,8 @@ internal sealed class CombatFish
         _dealsDamage = false;
         Rig.SetSpineSineEnabled(false);
         Rig.Player.Stop();
-        var scale = Mathf.Abs(Rig.UniformScale);
-        Rig.Root.Scale = new Vector2(scale, -scale);
+        _bellyUp = true;
+        Face(Rig.Root.Rotation);
     }
 
     private void Sink(double dt, FishArena arena)
@@ -301,6 +333,23 @@ internal sealed class CombatFish
         _velocity = _velocity.Lerp(wish, blend);
         Rig.Root.Position = arena.Clamp(Position + _velocity * (float)dt);
         if (_velocity.LengthSquared() > 36f)
-            Rig.Root.Rotation = _velocity.Angle();
+            Face(_velocity.Angle());
+    }
+
+    private void Face(float heading) => FishFacing.Apply(Rig, heading, _bellyUp, ref _mirrored);
+
+    private void StartFlash()
+    {
+        _flash = FishFlash.Duration;
+        FlashStarts++;
+        _flashMaterial.SetShaderParameter(FishFlash.Parameter, 1f);
+    }
+
+    private void DecayFlash(double dt)
+    {
+        if (_flash <= 0f)
+            return;
+        _flash = Mathf.Max(0f, _flash - (float)dt);
+        _flashMaterial.SetShaderParameter(FishFlash.Parameter, _flash / FishFlash.Duration);
     }
 }

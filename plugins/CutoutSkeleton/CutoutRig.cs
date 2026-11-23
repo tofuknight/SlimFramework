@@ -3,9 +3,9 @@ using Godot;
 namespace SlimFramework.CutoutSkeleton;
 
 /// <summary>
-/// 一套剪影骨架：内置 <see cref="Skeleton2D"/>、挂在骨骼上的 <see cref="Sprite2D"/> 槽位、
+/// 一套剪影骨架：内置 <see cref="Skeleton2D"/>、精灵或蒙皮多边形槽位、
 /// 一台共用的 <see cref="AnimationPlayer"/>。换装只改槽位贴图。
-/// 均匀尺寸只写根节点的 <see cref="Node2D.Scale"/>。
+/// 均匀尺寸写根节点缩放的绝对值，保留已经有的 Y 符号。
 /// </summary>
 public sealed class CutoutRig
 {
@@ -16,7 +16,7 @@ public sealed class CutoutRig
     private readonly Dictionary<string, Bone2D> _bones;
     private readonly Dictionary<string, string> _paths;
     private readonly Dictionary<string, float> _restRotation;
-    private readonly Dictionary<string, Sprite2D> _slots;
+    private readonly Dictionary<string, CanvasItem> _slots;
     private readonly AnimationLibrary _library;
     private readonly SpineSineDefinition? _sine;
     private double _sineTime;
@@ -31,7 +31,7 @@ public sealed class CutoutRig
         Dictionary<string, Bone2D> bones,
         Dictionary<string, string> paths,
         Dictionary<string, float> restRotation,
-        Dictionary<string, Sprite2D> slots,
+        Dictionary<string, CanvasItem> slots,
         SpineSineDefinition? sine)
     {
         Root = root;
@@ -109,9 +109,28 @@ public sealed class CutoutRig
                 restRotation.Add(spec.Name, spec.Rotation);
             }
 
-            var slots = new Dictionary<string, Sprite2D>(definition.Slots.Count);
+            var slots = new Dictionary<string, CanvasItem>(definition.Slots.Count);
             foreach (var spec in definition.Slots)
             {
+                if (spec.Skin != null)
+                {
+                    var polygon = new Polygon2D
+                    {
+                        Name = $"Slot_{spec.Id}",
+                        ZIndex = spec.ZIndex,
+                        Color = Colors.White,
+                        Polygon = spec.Skin.Vertices,
+                        UV = spec.Skin.Uv ?? UvFromBounds(spec.Skin.Vertices),
+                        Texture = spec.Texture,
+                        Skeleton = new NodePath("..")
+                    };
+                    skeleton.AddChild(polygon);
+                    foreach (var bone in spec.Skin.Bones)
+                        polygon.AddBone(SkeletonBonePath(paths, bone.Name), bone.Weights);
+                    slots.Add(spec.Id, polygon);
+                    continue;
+                }
+
                 var sprite = new Sprite2D
                 {
                     Name = $"Slot_{spec.Id}",
@@ -120,7 +139,7 @@ public sealed class CutoutRig
                     Centered = true,
                     Texture = spec.Texture
                 };
-                bones[spec.Bone].AddChild(sprite);
+                bones[spec.Bone!].AddChild(sprite);
                 slots.Add(spec.Id, sprite);
             }
 
@@ -154,30 +173,65 @@ public sealed class CutoutRig
         }
     }
 
-    /// <summary>只改根节点缩放。<c>(scale, scale)</c>，不动骨骼的局部缩放。</summary>
+    /// <summary>
+    /// 只改根节点缩放的绝对值。<c>(scale, ±scale)</c>，Y 的正负保持原样，不动骨骼的局部缩放。
+    /// </summary>
     public void SetUniformScale(float scale)
     {
         if (!float.IsFinite(scale) || scale <= 0f)
             throw new ArgumentOutOfRangeException(nameof(scale));
+        var ySign = Root.Scale.Y < 0f ? -1f : 1f;
         UniformScale = scale;
-        Root.Scale = new Vector2(scale, scale);
+        Root.Scale = new Vector2(scale, ySign * scale);
     }
 
-    /// <summary>只改这个槽位的贴图。不改骨骼、静息姿势和动画库。</summary>
+    /// <summary>只改这个槽位的贴图。精灵和蒙皮多边形都认。不改骨骼、静息姿势和动画库。</summary>
     public void SetSlotTexture(string slotId, Texture2D? texture)
     {
-        if (!_slots.TryGetValue(slotId, out var sprite) || !GodotObject.IsInstanceValid(sprite))
+        var visual = GetSlotNode(slotId);
+        if (!GodotObject.IsInstanceValid(visual))
             throw new ArgumentException($"没有槽位 {slotId}。", nameof(slotId));
-        sprite.Texture = texture;
+        switch (visual)
+        {
+            case Sprite2D sprite:
+                sprite.Texture = texture;
+                break;
+            case Polygon2D polygon:
+                polygon.Texture = texture;
+                break;
+            default:
+                throw new InvalidOperationException($"槽位 {slotId} 不能换贴图。");
+        }
     }
 
-    public Texture2D? GetSlotTexture(string slotId) => GetSlot(slotId).Texture;
+    public Texture2D? GetSlotTexture(string slotId) => GetSlotNode(slotId) switch
+    {
+        Sprite2D sprite => sprite.Texture,
+        Polygon2D polygon => polygon.Texture,
+        _ => throw new InvalidOperationException($"槽位 {slotId} 没有贴图。")
+    };
+
+    public CanvasItem GetSlotNode(string slotId)
+    {
+        if (!_slots.TryGetValue(slotId, out var visual))
+            throw new ArgumentException($"没有槽位 {slotId}。", nameof(slotId));
+        return visual;
+    }
+
+    public bool IsSkinnedSlot(string slotId) => GetSlotNode(slotId) is Polygon2D;
 
     public Sprite2D GetSlot(string slotId)
     {
-        if (!_slots.TryGetValue(slotId, out var sprite))
-            throw new ArgumentException($"没有槽位 {slotId}。", nameof(slotId));
-        return sprite;
+        if (GetSlotNode(slotId) is Sprite2D sprite)
+            return sprite;
+        throw new InvalidOperationException($"槽位 {slotId} 是蒙皮多边形，不是 Sprite2D。");
+    }
+
+    public Polygon2D GetSkinnedSlot(string slotId)
+    {
+        if (GetSlotNode(slotId) is Polygon2D polygon)
+            return polygon;
+        throw new InvalidOperationException($"槽位 {slotId} 不是蒙皮多边形。");
     }
 
     public Bone2D GetBone(string boneName)
@@ -321,7 +375,8 @@ public sealed class CutoutRig
             var bone = _bones[name];
             if (!GodotObject.IsInstanceValid(bone))
                 continue;
-            var wave = _sine.AmplitudeRadians * Mathf.Sin((time * _sine.FrequencyHz * Mathf.Tau) + (i * _sine.PhaseStepRadians));
+            var amplitudeScale = _sine.AmplitudeScales == null ? 1f : _sine.AmplitudeScales[i];
+            var wave = _sine.AmplitudeRadians * amplitudeScale * Mathf.Sin((time * _sine.FrequencyHz * Mathf.Tau) + (i * _sine.PhaseStepRadians));
             bone.Rotation = _restRotation[name] + wave;
         }
     }
@@ -358,8 +413,14 @@ public sealed class CutoutRig
             RequireNodeName(slot.Id, nameof(definition));
             if (!slotIds.Add(slot.Id))
                 throw new ArgumentException($"槽位重名：{slot.Id}。", nameof(definition));
-            if (!seen.Contains(slot.Bone))
-                throw new ArgumentException($"槽位 {slot.Id} 的骨骼不存在。", nameof(definition));
+            if (slot.Skin == null)
+            {
+                if (slot.Bone == null || !seen.Contains(slot.Bone))
+                    throw new ArgumentException($"槽位 {slot.Id} 的骨骼不存在。", nameof(definition));
+            }
+            else
+                ValidateSkin(slot, seen);
+
             if (!IsFinite(slot.Position))
                 throw new ArgumentException($"槽位位置无效：{slot.Id}。", nameof(definition));
         }
@@ -373,6 +434,8 @@ public sealed class CutoutRig
             throw new ArgumentOutOfRangeException(nameof(definition), "正弦频率必须大于 0。");
         if (!float.IsFinite(sine.AmplitudeRadians) || !float.IsFinite(sine.PhaseStepRadians))
             throw new ArgumentException("正弦参数无效。", nameof(definition));
+        if (sine.AmplitudeScales != null && sine.AmplitudeScales.Count != sine.BoneNames.Count)
+            throw new ArgumentException("正弦振幅系数必须和骨骼一样多。", nameof(definition));
 
         var waved = new HashSet<string>(sine.BoneNames.Count);
         foreach (var name in sine.BoneNames)
@@ -382,6 +445,66 @@ public sealed class CutoutRig
             if (!waved.Add(name))
                 throw new ArgumentException($"正弦骨骼重复：{name}。", nameof(definition));
         }
+
+        if (sine.AmplitudeScales == null)
+            return;
+        foreach (var scale in sine.AmplitudeScales)
+        {
+            if (!float.IsFinite(scale))
+                throw new ArgumentException("正弦振幅系数无效。", nameof(definition));
+        }
+    }
+
+    private static void ValidateSkin(CutoutSlotDefinition slot, HashSet<string> bones)
+    {
+        var skin = slot.Skin!;
+        if (skin.Vertices == null || skin.Vertices.Length < 3)
+            throw new ArgumentException($"蒙皮至少要三个顶点：{slot.Id}。", nameof(slot));
+        foreach (var vertex in skin.Vertices)
+        {
+            if (!IsFinite(vertex))
+                throw new ArgumentException($"蒙皮顶点无效：{slot.Id}。", nameof(slot));
+        }
+
+        if (skin.Uv != null && skin.Uv.Length != skin.Vertices.Length)
+            throw new ArgumentException($"蒙皮 UV 数量不对：{slot.Id}。", nameof(slot));
+        if (skin.Bones == null || skin.Bones.Count == 0)
+            throw new ArgumentException($"蒙皮至少要一根骨头：{slot.Id}。", nameof(slot));
+
+        var used = new HashSet<string>(skin.Bones.Count);
+        foreach (var bone in skin.Bones)
+        {
+            if (bone == null || string.IsNullOrWhiteSpace(bone.Name) || !bones.Contains(bone.Name))
+                throw new ArgumentException($"蒙皮骨头不存在：{slot.Id}。", nameof(slot));
+            if (!used.Add(bone.Name))
+                throw new ArgumentException($"蒙皮骨头重复：{bone.Name}。", nameof(slot));
+            if (bone.Weights == null || bone.Weights.Length != skin.Vertices.Length)
+                throw new ArgumentException($"蒙皮权重数量不对：{bone.Name}。", nameof(slot));
+            foreach (var weight in bone.Weights)
+            {
+                if (!float.IsFinite(weight) || weight < 0f)
+                    throw new ArgumentException($"蒙皮权重无效：{bone.Name}。", nameof(slot));
+            }
+        }
+    }
+
+    private static Vector2[] UvFromBounds(Vector2[] vertices)
+    {
+        var min = vertices[0];
+        for (var i = 1; i < vertices.Length; i++)
+            min = min.Min(vertices[i]);
+        var uv = new Vector2[vertices.Length];
+        for (var i = 0; i < vertices.Length; i++)
+            uv[i] = vertices[i] - min;
+        return uv;
+    }
+
+    private static NodePath SkeletonBonePath(Dictionary<string, string> paths, string boneName)
+    {
+        var full = paths[boneName];
+        var prefix = SkeletonNodeName + "/";
+        var relative = full.StartsWith(prefix, StringComparison.Ordinal) ? full[prefix.Length..] : full;
+        return new NodePath(relative);
     }
 
     private static void RequireNodeName(string name, string param)

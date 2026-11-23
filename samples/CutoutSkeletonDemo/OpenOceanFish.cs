@@ -22,6 +22,9 @@ internal static class OpenOceanFish
     public const double TailSwipeLength = 0.48;
     public const double RecoilLength = 0.28;
     public const float DisplayScale = 2f;
+    public const float SineAmplitude = 0.24f;
+    public const float SineFrequency = 1.35f;
+    public const float SinePhaseStep = 0.72f;
 
     public static readonly string[] AttackClips = [BiteClip, LungeClip, TailSwipeClip];
 
@@ -45,11 +48,15 @@ internal static class OpenOceanFish
 
     public static readonly string[] SineBones =
     [
+        BoneHead,
         BoneSpineFront,
         BoneSpineMid,
         BoneSpineTail,
         BoneTail
     ];
+
+    /// <summary>和 <see cref="SineBones"/> 对齐。头是负的，用来对着身体的波；越靠尾越大。</summary>
+    public static readonly float[] SineAmplitudeScales = [-0.42f, 0.7f, 1.05f, 1.45f, 1.9f];
 
     public static readonly string[] SlotIds =
     [
@@ -67,7 +74,7 @@ internal static class OpenOceanFish
         int mouth,
         int body,
         int fin,
-        float sineFrequencyHz = 1.3f) => new()
+        float sineFrequencyHz = SineFrequency) => new()
     {
         Bones =
         [
@@ -84,7 +91,7 @@ internal static class OpenOceanFish
         Slots =
         [
             Slot(SlotTail, BoneTail, new Vector2(-4, 0), 0, parts.Get(SlotTail, fin)),
-            Slot(SlotBody, BoneSpineFront, new Vector2(-6, 1), 1, parts.Get(SlotBody, body)),
+            SkinSlot(SlotBody, -5, parts.Get(SlotBody, body)),
             Slot(SlotRidge, BoneRidge, new Vector2(-4, 0), 2, parts.Get(SlotRidge, body)),
             Slot(SlotPectoral, BonePectoral, new Vector2(-2, 6), 3, parts.Get(SlotPectoral, fin)),
             Slot(SlotDorsal, BoneDorsal, new Vector2(0, -14), 4, parts.Get(SlotDorsal, fin)),
@@ -94,9 +101,10 @@ internal static class OpenOceanFish
         SpineSine = new SpineSineDefinition
         {
             BoneNames = SineBones,
-            AmplitudeRadians = 0.11f,
+            AmplitudeRadians = SineAmplitude,
             FrequencyHz = sineFrequencyHz,
-            PhaseStepRadians = 0.6f
+            PhaseStepRadians = SinePhaseStep,
+            AmplitudeScales = SineAmplitudeScales
         }
     };
 
@@ -111,9 +119,9 @@ internal static class OpenOceanFish
         rig.SetSlotTexture(SlotTail, parts.Get(SlotTail, fin));
     }
 
-    /// <summary>冲刺和甩尾要写到正弦骨骼上。播这两段时先关掉这条鱼的正弦，结束后再打开。</summary>
-    public static bool ClipDrivesSpine(string clip) =>
-        clip == LungeClip || clip == TailSwipeClip;
+    /// <summary>这些片段要写到正弦骨骼上。播放时先关掉这条鱼的正弦，结束后再打开。</summary>
+    public static bool SuspendsSpineSine(string clip) =>
+        clip == LungeClip || clip == TailSwipeClip || clip == RecoilClip;
 
     public static void AddSharedClips(CutoutRig rig) => BindClipSet(rig, CreateClipSet(rig));
 
@@ -143,10 +151,7 @@ internal static class OpenOceanFish
             [
                 new(BoneJaw, 0d, 0f),
                 new(BoneJaw, 0.12d, 0.72f),
-                new(BoneJaw, BiteLength, 0f),
-                new(BoneHead, 0d, 0f),
-                new(BoneHead, 0.12d, -0.1f),
-                new(BoneHead, BiteLength, 0f)
+                new(BoneJaw, BiteLength, 0f)
             ]),
             Lunge = rig.CreateRotationClip(LungeLength, loop: false,
             [
@@ -217,6 +222,14 @@ internal static class OpenOceanFish
         Position = position,
         ZIndex = zIndex,
         Texture = texture
+    };
+
+    private static CutoutSlotDefinition SkinSlot(string id, int zIndex, Texture2D texture) => new()
+    {
+        Id = id,
+        ZIndex = zIndex,
+        Texture = texture,
+        Skin = OpenOceanBody.CreateSkin()
     };
 }
 

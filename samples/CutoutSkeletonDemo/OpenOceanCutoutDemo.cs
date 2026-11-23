@@ -36,7 +36,7 @@ internal sealed class OpenOceanCutoutDemo
         _rig.Root.Position = new Vector2(760, 390);
         _rig.SetUniformScale(OpenOceanFish.DisplayScale);
         foreach (var slot in _rig.SlotIds)
-            _rig.GetSlot(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+            _rig.GetSlotNode(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
 
         OpenOceanFish.AddSharedClips(_rig);
         _rig.Player.AnimationFinished += OnAnimationFinished;

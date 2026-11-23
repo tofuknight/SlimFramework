@@ -52,6 +52,23 @@ internal sealed class FishArena
 
     public int VerifiedTail { get; private set; }
 
+    public bool SawBellyUpAlive { get; private set; }
+
+    public bool SawWave { get; private set; }
+
+    public bool SawBrightFlash { get; private set; }
+
+    public int FlashStarts
+    {
+        get
+        {
+            var count = 0;
+            foreach (var fish in _fish)
+                count += fish.FlashStarts;
+            return count;
+        }
+    }
+
     public int LivingCount
     {
         get
@@ -134,6 +151,7 @@ internal sealed class FishArena
         for (var i = 0; i < _fish.Count; i++)
             _fish[i].Step(dt, this);
         NoteAttacks();
+        NotePresentation();
     }
 
     public void NotifyAttack(string clip)
@@ -302,7 +320,7 @@ internal sealed class FishArena
         rig.SetUniformScale(0.56f + (float)_random.NextDouble() * 0.3f);
         rig.Root.Modulate = Colors.White;
         foreach (var slot in rig.SlotIds)
-            rig.GetSlot(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+            rig.GetSlotNode(slot).TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
 
         var speed = 112f + (float)_random.NextDouble() * 56f;
         var preferred = OpenOceanFish.AttackClips[index % OpenOceanFish.AttackClips.Length];
@@ -338,6 +356,9 @@ internal sealed class FishArena
         VerifiedBite = 0;
         VerifiedLunge = 0;
         VerifiedTail = 0;
+        SawBellyUpAlive = false;
+        SawWave = false;
+        SawBrightFlash = false;
     }
 
     private void NoteAttacks()
@@ -363,6 +384,21 @@ internal sealed class FishArena
                     VerifiedTail++;
                     break;
             }
+        }
+    }
+
+    private void NotePresentation()
+    {
+        foreach (var fish in _fish)
+        {
+            if (fish.Alive && !FishFacing.IsBellyDown(fish.Rig))
+                SawBellyUpAlive = true;
+            if (fish.FlashAmount > 0.45f)
+                SawBrightFlash = true;
+            var front = fish.Rig.GetBone(OpenOceanFish.BoneSpineFront).Rotation;
+            var tail = fish.Rig.GetBone(OpenOceanFish.BoneTail).Rotation;
+            if (Mathf.Abs(front - tail) > 0.08f)
+                SawWave = true;
         }
     }
 

@@ -24,7 +24,7 @@ tools/*           →  SlimFramework.Contracts（不需要 Godot 时可以 → S
 | `SlimFramework.Godot` | `src/SlimFramework.Godot` | `SlimFramework`、`GodotSharp` | `plugins/`、游戏、Demo |
 | `SlimFramework.Demo` | `samples/SlimFramework.Demo` | `SlimFramework`、Contracts | `GodotSharp`、`SlimFramework.Godot`、`DemoGame` |
 | `SlimFramework.DemoGame` | `samples/DemoGame` | 适配层、`SlimFramework.Demo`、可选插件 | 被 `src/`、`plugins/`、`tools/` 引用 |
-| `SlimFramework.CutoutSkeletonDemo` | `samples/CutoutSkeletonDemo` | 适配层、`plugins/CutoutSkeleton` | 被 `src/`、`plugins/`、`tools/` 引用。鱼的部位对照只留在这里 |
+| `SlimFramework.CutoutSkeletonDemo` | `samples/CutoutSkeletonDemo` | 适配层、`plugins/CutoutSkeleton` | 被 `src/`、`plugins/`、`tools/` 引用。鱼的部位对照和对战规则只留在这里 |
 | `Slim.SaveTool` | `tools/Slim.SaveTool` | Contracts | Demo、游戏、适配层 |
 | `Slim.AssetCatalogTool` | `tools/Slim.AssetCatalogTool` | Contracts、`SlimFramework`（调用 `ResourceCatalog.Parse`） | Demo、游戏、适配层、`plugins/` |
 | 插件 | `plugins/<Name>/` | `SlimFramework`，需要引擎类型时再加适配层 | `samples/`、任何游戏工程 |
@@ -194,7 +194,7 @@ public partial class GameRoot : SlimBootstrap
 | `ClickOutsideClosePlugin` | `click-outside-close` | `plugins/ClickOutsideClose/ClickOutsideClose.csproj` | 指针在栈顶页面矩形外按下时调用 `IUiStack.CloseTop` | `app.Use(new ClickOutsideClosePlugin())`。需要已经 `Add` 的 `GodotUiStack`。模块是 `internal`，没有 `Get` 键 |
 | `AsyncAssetsPlugin` | `async-assets` | `plugins/AsyncAssets/AsyncAssets.csproj` | 后台加载 `AsyncAssetLoader`，分帧释放 `ReleaseQueue`（默认每帧 8 次） | `app.Use(new AsyncAssetsPlugin())`。`Get<AsyncAssetLoader>()`、`Get<ReleaseQueue>()`。需要已经 `Add` 的 `GodotAssetLoader` |
 | `UiLifecyclePlugin` | `ui-lifecycle` | `plugins/UiLifecycle/UiLifecycle.csproj` | 页面被盖住 / 重新成为栈顶时 `IUiPageLifecycle.OnCovered` / `OnRevealed`。栈顶按打开顺序，与 `CloseTop` 一致 | `app.Use(new UiLifecyclePlugin())`。`Get<UiLifecycleModule>()`。页面可选实现 `IUiPageLifecycle`。需要已经 `Add` 的 `GodotUiStack` |
-| `CutoutSkeletonPlugin` | `cutout-skeleton` | `plugins/CutoutSkeleton/CutoutSkeleton.csproj` | Godot 内置 `Skeleton2D` / `Bone2D` 剪影。槽位是 `Sprite2D`，换装只改贴图。共用一台 `AnimationPlayer`。可选正弦只写调用方点名的骨骼旋转。均匀尺寸只写根节点 `Scale` | `app.Use(new CutoutSkeletonPlugin())`。`Get<CutoutSkeletonModule>()`，再 `Attach`。不依赖其它已 `Add` 的服务。物种和档位留在游戏 |
+| `CutoutSkeletonPlugin` | `cutout-skeleton` | `plugins/CutoutSkeleton/CutoutSkeleton.csproj` | Godot 内置 `Skeleton2D` / `Bone2D` 剪影。槽位是 `Sprite2D` 或蒙皮 `Polygon2D`，换装只改贴图。共用一台 `AnimationPlayer`。可选正弦只写调用方点名的骨骼旋转，可按骨头给振幅系数，也可只改骨头局部 Scale.X。均匀尺寸写根节点缩放绝对值并保留 Y 符号 | `app.Use(new CutoutSkeletonPlugin())`。`Get<CutoutSkeletonModule>()`，再 `Attach`。不依赖其它已 `Add` 的服务。物种和档位留在游戏 |
 
 ### 明确不进框架
 

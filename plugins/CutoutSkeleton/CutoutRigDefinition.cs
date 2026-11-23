@@ -18,23 +18,49 @@ public sealed class CutoutBoneDefinition
     public float Length { get; init; } = 16f;
 }
 
-/// <summary>一个槽位：挂在某根骨骼上的 <see cref="Sprite2D"/>。换装只改它的贴图。</summary>
+/// <summary>
+/// 一个槽位。没有 <see cref="Skin"/> 时是挂在 <see cref="Bone"/> 上的 <see cref="Sprite2D"/>。
+/// 有 <see cref="Skin"/> 时是骨架上的蒙皮 <see cref="Polygon2D"/>，换装仍然只改贴图。
+/// </summary>
 public sealed class CutoutSlotDefinition
 {
     public required string Id { get; init; }
 
-    public required string Bone { get; init; }
+    /// <summary>精灵挂在这根骨头上。蒙皮槽位不用它。</summary>
+    public string? Bone { get; init; }
 
     public Vector2 Position { get; init; }
 
     public int ZIndex { get; init; }
 
     public Texture2D? Texture { get; init; }
+
+    public CutoutSkinDefinition? Skin { get; init; }
+}
+
+/// <summary>一块绑在多根骨头上的多边形。顶点在骨架局部坐标里。</summary>
+public sealed class CutoutSkinDefinition
+{
+    public required Vector2[] Vertices { get; init; }
+
+    /// <summary>与 <see cref="Vertices"/> 等长的贴图像素坐标。空则按包围盒从左上角算。</summary>
+    public Vector2[]? Uv { get; init; }
+
+    public required IReadOnlyList<CutoutSkinBone> Bones { get; init; }
+}
+
+/// <summary>蒙皮里的一根骨头。权重和顶点一一对应，同一顶点上各骨头相加应为正数。</summary>
+public sealed class CutoutSkinBone
+{
+    public required string Name { get; init; }
+
+    public required float[] Weights { get; init; }
 }
 
 /// <summary>
 /// 可选正弦。调用方列出要摆动的骨骼（通常是脊柱链），插件不假定物种或部位。
-/// 这些骨骼每帧会被写成「静息旋转 + 正弦」，不要再给它们加旋转轨道。
+/// 这些骨骼每帧会被写成「静息旋转 + 正弦」。旋转系数为 0 的骨头不写旋转，片段可以继续驱动它。
+/// 可选的 <see cref="ScaleXAmplitudes"/> 只改骨头局部 <c>Scale.X</c>，不碰根节点。
 /// </summary>
 public sealed class SpineSineDefinition
 {
@@ -46,6 +72,19 @@ public sealed class SpineSineDefinition
 
     /// <summary>沿 <see cref="BoneNames"/> 依次增加的相位，用来把摆动传下去。</summary>
     public float PhaseStepRadians { get; init; } = 0.8f;
+
+    /// <summary>
+    /// 与 <see cref="BoneNames"/> 等长的振幅系数。空则每根都是 1。
+    /// 沿链增大就是行波越到末端越大。负值是反向摆。0 表示不写这根骨头的旋转。
+    /// </summary>
+    public IReadOnlyList<float>? AmplitudeScales { get; init; }
+
+    /// <summary>
+    /// 与 <see cref="BoneNames"/> 等长的局部 X 缩短量。空则不改缩放。
+    /// 每个周期把局部 <c>Scale.X</c> 从静息收到 <c>静息 × (1 - 振幅)</c>。
+    /// 0.65 就是大约 1 → 0.35 → 1。负值反向，略微拉宽。必须小于 1。
+    /// </summary>
+    public IReadOnlyList<float>? ScaleXAmplitudes { get; init; }
 }
 
 /// <summary>建骨架用的数据。骨骼、槽位、片段名都由调用方决定。</summary>

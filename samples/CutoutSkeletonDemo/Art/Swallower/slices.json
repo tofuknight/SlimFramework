@@ -1,0 +1,304 @@
+{
+  "source": "swallower_full.png",
+  "size": [
+    115,
+    64
+  ],
+  "facing": "+X",
+  "anchor": {
+    "bone": "SpineFront",
+    "image": [
+      80,
+      32
+    ]
+  },
+  "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍源像素只在 anal_fin.png，含尖端。身体重叠处和胸鳍缺口填肚皮色。",
+  "parts": {
+    "Tail": {
+      "file": "parts/tail.png",
+      "bone": "Tail",
+      "crop": [
+        10,
+        16,
+        37,
+        39
+      ],
+      "pivot": [
+        40,
+        33
+      ],
+      "pivotInTexture": [
+        30,
+        17
+      ]
+    },
+    "Dorsal": {
+      "file": "parts/dorsal.png",
+      "bone": "Dorsal",
+      "crop": [
+        53,
+        5,
+        21,
+        17
+      ],
+      "pivot": [
+        66,
+        20
+      ],
+      "pivotInTexture": [
+        13,
+        15
+      ]
+    },
+    "Anal": {
+      "file": "parts/anal_fin.png",
+      "bone": "SpineTail",
+      "crop": [
+        40,
+        36,
+        15,
+        13
+      ],
+      "pivot": [
+        48,
+        40
+      ],
+      "pivotInTexture": [
+        8,
+        4
+      ]
+    },
+    "Pectoral": {
+      "file": "parts/pectoral.png",
+      "bone": "Pectoral",
+      "crop": [
+        50,
+        39,
+        37,
+        17
+      ],
+      "pivot": [
+        64,
+        40
+      ],
+      "pivotInTexture": [
+        14,
+        1
+      ]
+    },
+    "Jaw": {
+      "file": "parts/jaw.png",
+      "bone": "Jaw",
+      "crop": [
+        82,
+        30,
+        23,
+        13
+      ],
+      "pivot": [
+        86,
+        32
+      ],
+      "pivotInTexture": [
+        4,
+        2
+      ]
+    },
+    "Head": {
+      "file": "parts/head.png",
+      "bone": "Head",
+      "crop": [
+        82,
+        20,
+        23,
+        21
+      ],
+      "pivot": [
+        84,
+        30
+      ],
+      "pivotInTexture": [
+        2,
+        10
+      ]
+    },
+    "Body": {
+      "file": "parts/body.png",
+      "bone": "SpineFront",
+      "crop": [
+        39,
+        18,
+        47,
+        25
+      ],
+      "pivot": [
+        80,
+        32
+      ],
+      "pivotInTexture": [
+        41,
+        14
+      ]
+    }
+  },
+  "bones": [
+    {
+      "name": "SpineFront",
+      "parent": null,
+      "image": [
+        80,
+        32
+      ]
+    },
+    {
+      "name": "Head",
+      "parent": "SpineFront",
+      "image": [
+        84,
+        30
+      ]
+    },
+    {
+      "name": "Jaw",
+      "parent": "Head",
+      "image": [
+        86,
+        32
+      ]
+    },
+    {
+      "name": "Ridge",
+      "parent": "SpineFront",
+      "image": [
+        68,
+        20
+      ]
+    },
+    {
+      "name": "Dorsal",
+      "parent": "SpineFront",
+      "image": [
+        66,
+        20
+      ]
+    },
+    {
+      "name": "Pectoral",
+      "parent": "SpineFront",
+      "image": [
+        64,
+        40
+      ]
+    },
+    {
+      "name": "SpineMid",
+      "parent": "SpineFront",
+      "image": [
+        62,
+        32
+      ]
+    },
+    {
+      "name": "SpineTail",
+      "parent": "SpineMid",
+      "image": [
+        48,
+        33
+      ]
+    },
+    {
+      "name": "Tail",
+      "parent": "SpineTail",
+      "image": [
+        40,
+        33
+      ]
+    }
+  ],
+  "bodyPolygon": [
+    [
+      39,
+      31
+    ],
+    [
+      44,
+      28
+    ],
+    [
+      49,
+      28
+    ],
+    [
+      54,
+      22
+    ],
+    [
+      59,
+      18
+    ],
+    [
+      64,
+      18
+    ],
+    [
+      69,
+      18
+    ],
+    [
+      74,
+      20
+    ],
+    [
+      79,
+      20
+    ],
+    [
+      84,
+      20
+    ],
+    [
+      85,
+      21
+    ],
+    [
+      85,
+      42
+    ],
+    [
+      79,
+      42
+    ],
+    [
+      74,
+      41
+    ],
+    [
+      69,
+      42
+    ],
+    [
+      64,
+      42
+    ],
+    [
+      59,
+      41
+    ],
+    [
+      54,
+      41
+    ],
+    [
+      49,
+      42
+    ],
+    [
+      44,
+      42
+    ],
+    [
+      39,
+      37
+    ]
+  ]
+}

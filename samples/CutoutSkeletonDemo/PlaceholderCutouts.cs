@@ -27,71 +27,77 @@ internal static class PlaceholderCutouts
 
     public static Image Create(string slotId, int tier)
     {
+        if (slotId == OpenOceanFish.SlotBody)
+            return Body(tier);
+        if (slotId == OpenOceanFish.SlotRidge)
+            return Ridge(tier);
+
         var (image, poly, fill) = slotId switch
         {
-            OpenOceanFish.SlotBody => Body(tier),
             OpenOceanFish.SlotHead => Head(tier),
             OpenOceanFish.SlotJaw => Jaw(tier),
-            OpenOceanFish.SlotRidge => Ridge(tier),
             OpenOceanFish.SlotDorsal => Dorsal(tier),
             OpenOceanFish.SlotPectoral => Pectoral(tier),
             OpenOceanFish.SlotTail => Tail(tier),
             _ => throw new ArgumentException($"没有占位贴图：{slotId}。", nameof(slotId))
         };
         Paint(image, poly, fill, stroke: true);
-        if (slotId == OpenOceanFish.SlotBody)
-        {
-            var (bellyPoly, bellyFill) = Belly(tier);
-            Paint(image, bellyPoly, bellyFill, stroke: false);
-        }
-
         if (slotId == OpenOceanFish.SlotHead)
             DrawEye(image);
         return image;
     }
 
-    private static (Image Image, Vector2[] Poly, Color Fill) Body(int tier)
+    private static Image Body(int tier)
     {
-        var image = Blank(140, 48);
-        Vector2[] poly = tier switch
-        {
-            0 => [new(6, 24), new(36, 14), new(96, 12), new(132, 24), new(96, 36), new(36, 34)],
-            1 => [new(4, 24), new(32, 9), new(98, 7), new(134, 24), new(98, 41), new(32, 39)],
-            _ => [new(4, 24), new(28, 5), new(96, 4), new(136, 24), new(96, 44), new(28, 43)]
-        };
-        return (image, poly, Rgb(tier switch
+        var image = Blank(OpenOceanBody.TextureWidth, OpenOceanBody.TextureHeight);
+        var fill = Rgb(tier switch
         {
             0 => (132, 176, 204),
             1 => (64, 130, 178),
             _ => (28, 72, 120)
-        }));
-    }
-
-    private static (Vector2[] Poly, Color Fill) Belly(int tier)
-    {
-        Vector2[] poly = tier switch
-        {
-            0 => [new(40, 26), new(98, 28), new(124, 24), new(98, 35), new(40, 33)],
-            1 => [new(36, 28), new(100, 30), new(126, 24), new(100, 39), new(36, 37)],
-            _ => [new(34, 30), new(98, 32), new(128, 24), new(98, 42), new(34, 41)]
-        };
-        var color = Rgb(tier switch
+        });
+        var belly = Rgb(tier switch
         {
             0 => (186, 210, 216),
             1 => (126, 176, 198),
             _ => (86, 128, 160)
         });
-        return (poly, color);
+        var back = Rgb(tier switch
+        {
+            0 => (78, 118, 150),
+            1 => (32, 86, 128),
+            _ => (16, 48, 84)
+        });
+        Paint(image, OpenOceanBody.Uv, fill, stroke: true);
+        var height = image.GetHeight();
+        var width = image.GetWidth();
+        var backLine = height * 0.34f;
+        var bellyLine = height * 0.58f;
+        for (var y = 0; y < height; y++)
+        {
+            for (var x = 0; x < width; x++)
+            {
+                var pixel = image.GetPixel(x, y);
+                if (pixel.A <= 0f)
+                    continue;
+                if (y < backLine)
+                    image.SetPixel(x, y, back);
+                else if (y > bellyLine)
+                    image.SetPixel(x, y, belly);
+            }
+        }
+
+        return image;
     }
 
     private static (Image Image, Vector2[] Poly, Color Fill) Head(int tier)
     {
-        var image = Blank(72, 44);
+        var image = Blank(64, 40);
         Vector2[] poly = tier switch
         {
-            0 => [new(4, 22), new(22, 12), new(50, 14), new(66, 22), new(50, 30), new(22, 32)],
-            1 => [new(2, 22), new(18, 8), new(48, 8), new(68, 22), new(48, 34), new(18, 36)],
-            _ => [new(2, 22), new(16, 4), new(44, 6), new(70, 22), new(44, 38), new(16, 40)]
+            0 => [new(2, 10), new(22, 6), new(44, 10), new(60, 20), new(44, 30), new(22, 34), new(2, 30)],
+            1 => [new(2, 8), new(20, 4), new(42, 8), new(62, 20), new(42, 32), new(20, 36), new(2, 32)],
+            _ => [new(2, 6), new(18, 2), new(40, 6), new(62, 20), new(40, 34), new(18, 38), new(2, 34)]
         };
         return (image, poly, Rgb(tier switch
         {
@@ -118,21 +124,17 @@ internal static class PlaceholderCutouts
         }));
     }
 
-    private static (Image Image, Vector2[] Poly, Color Fill) Ridge(int tier)
+    private static Image Ridge(int tier)
     {
-        var image = Blank(72, 14);
-        Vector2[] poly = tier switch
-        {
-            0 => [new(2, 7), new(16, 5), new(56, 5), new(70, 7), new(56, 9), new(16, 9)],
-            1 => [new(2, 7), new(14, 4), new(58, 3), new(70, 7), new(58, 11), new(14, 10)],
-            _ => [new(2, 7), new(12, 2), new(60, 1), new(70, 7), new(60, 13), new(12, 12)]
-        };
-        return (image, poly, Rgb(tier switch
+        var image = Blank(OpenOceanBody.RidgeTextureWidth, OpenOceanBody.RidgeTextureHeight);
+        var fill = Rgb(tier switch
         {
             0 => (196, 104, 108),
             1 => (214, 132, 86),
             _ => (232, 184, 84)
-        }));
+        });
+        Paint(image, OpenOceanBody.RidgeUv, fill, stroke: true);
+        return image;
     }
 
     private static (Image Image, Vector2[] Poly, Color Fill) Dorsal(int tier)
@@ -180,8 +182,8 @@ internal static class PlaceholderCutouts
 
     private static void DrawEye(Image image)
     {
-        FillCircle(image, 50, 18, 4, Rgb((18, 32, 42)));
-        FillCircle(image, 51, 17, 1, Rgb((240, 248, 252)));
+        FillCircle(image, 46, 16, 4, Rgb((18, 32, 42)));
+        FillCircle(image, 47, 15, 1, Rgb((240, 248, 252)));
     }
 
     private static Image Blank(int width, int height)

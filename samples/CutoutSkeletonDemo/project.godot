@@ -1,4 +1,5 @@
-; Godot 4.7.2 剪影换装样例。打开本目录的 project.godot，不要把仓库根目录当游戏工程。
+; Godot 4.7.2 剪影换装和对战样例。打开本目录的 project.godot，不要把仓库根目录当游戏工程。
+; 主场景是换装 Main.tscn。对战是 Combat.tscn（F6，或换装界面按 C）。
 ; C# 工程是 SlimFramework.CutoutSkeletonDemo.csproj（须与下面的 assembly_name 同名）。
 config_version=5
 

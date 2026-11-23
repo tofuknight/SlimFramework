@@ -15,7 +15,7 @@ plugins/*           → SlimFramework (+ optional SlimFramework.Godot)
 
 `plugins/ClickOutsideClose` closes the top page when the pointer presses outside that page's rectangle. Games `Use` it after `base.Configure`. `SlimBootstrap.Configure` does not. `samples/SlimFramework.Demo` must not reference it. Hooks are `GodotUiStack.PagePresented` and `PageDismissed`; with no subscriber, open and close stay as they are. Optional plugins are ClickOutsideClose, AsyncAssets, UiLifecycle, and CutoutSkeleton; the map is `docs/architecture.md`「全局能力地图」.
 
-`plugins/CutoutSkeleton` is an opt-in Godot `Skeleton2D` / `Bone2D` cutout rig: slot swap changes a `Sprite2D` texture, clips stay on one `AnimationPlayer`, and an optional sine writes only the bones the caller names. It does not know species or game rules. `samples/CutoutSkeletonDemo` owns the open-ocean fish mapping. Do not put that mapping in the plugin, in core, or in `samples/DemoGame`. `SlimBootstrap.Configure` does not `Use` it.
+`plugins/CutoutSkeleton` is an opt-in Godot `Skeleton2D` / `Bone2D` cutout rig: a slot is a `Sprite2D` or a skinned `Polygon2D`, slot swap only changes the texture, clips stay on one `AnimationPlayer`, and an optional sine writes only the bones the caller names (with optional per-bone rotation scales and local Scale.X foreshortening). Multiple rigs share one deferred sine write per frame. `SetUniformScale` keeps the sign of root scale Y. It does not know species or game rules. `samples/CutoutSkeletonDemo` owns the open-ocean fish mapping and the watch-only combat scene. Do not put that mapping or those rules in the plugin, in core, or in `samples/DemoGame`. `SlimBootstrap.Configure` does not `Use` it.
 
 Area checklists: `AGENTS.md`, then the `DOMAIN.md` next to the code (`src/SlimFramework`, `src/SlimFramework.Contracts`, `src/SlimFramework.Godot`, `plugins`, `tools`, `samples`). Those files do not permit growing the core.
 
@@ -39,7 +39,7 @@ License: root `LICENSE` (MIT). Third-party Luban notices stay in `THIRD_PARTY_NO
 
 `samples/DemoGame` keeps `Sdk="Godot.NET.Sdk/4.7.2"` so the Godot 4.7.2 editor does not rewrite the project. Plain `dotnet build` does not need the editor: `SlimDemoGameEditorBuild` stays off, the SDK's implicit GodotSharp reference is disabled, and the repo `GodotSharp` package is used instead. The editor passes `-p:GodotTargetPlatform=...`, which turns that property on and uses the SDK references. The project file is `SlimFramework.DemoGame.csproj` (Godot looks up `{assembly_name}.csproj`). Details: `samples/DemoGame/README.md`.
 
-`samples/CutoutSkeletonDemo` keeps `Sdk="Godot.NET.Sdk/4.7.2"` as well, with its own `SlimCutoutSkeletonDemoEditorBuild` switch. Play `samples/CutoutSkeletonDemo/project.godot` `Main.tscn` to see the cutout sample. Headless: `godot --headless --path samples/CutoutSkeletonDemo` prints `SlimFramework cutout skeleton sample smoke OK` and quits. That run does not replace DemoGame AdapterSmoke.
+`samples/CutoutSkeletonDemo` keeps `Sdk="Godot.NET.Sdk/4.7.2"` as well, with its own `SlimCutoutSkeletonDemoEditorBuild` switch. Play `samples/CutoutSkeletonDemo/project.godot` `Main.tscn` for the slot-swap lab, and `Combat.tscn` for the 30-fish watch-only fight. Headless slot swap: `godot --headless --path samples/CutoutSkeletonDemo` prints `SlimFramework cutout skeleton sample smoke OK` and quits. Headless combat: `godot --headless --path samples/CutoutSkeletonDemo -- --combat` prints `SlimFramework cutout combat sample smoke OK` and quits. Those runs do not replace DemoGame AdapterSmoke.
 
 `samples/EmptyGame` is a copy-out shell for a new game repository (submodule consumer). It is not in `SlimFramework.sln`. Do not build it inside this repo, and do not put gameplay in `samples/DemoGame`. Do not add a `ProjectReference` from `src/`, `plugins/`, or `tools/` to `samples/EmptyGame`.
 
@@ -89,7 +89,7 @@ src/SlimFramework.Godot        Godot 适配（程序集名 SlimFramework.Godot�
 samples/SlimFramework.Demo     示例游戏逻辑，不引用 Godot
 samples/SlimFramework.Demo.Runner
 samples/DemoGame               最小 Godot 工程。主场景冒烟 Godot 适配，再跑 DemoSession
-samples/CutoutSkeletonDemo     剪影换装样例。Use CutoutSkeleton，鱼的部位对照留在这里
+samples/CutoutSkeletonDemo     剪影换装和对战样例。Use CutoutSkeleton，鱼的部位对照和对战规则留在这里
 samples/EmptyGame              新游戏空壳。拷到单独的仓库再用，不进解决方案，不放玩法
 tools/Slim.SaveTool            只依赖契约的存档信封工具
 tools/Slim.AssetCatalogTool    资源清单 → ResourceRefCatalog 字节 + DisplayKey 常量类

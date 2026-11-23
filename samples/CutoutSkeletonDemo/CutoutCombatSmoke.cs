@@ -88,6 +88,7 @@ internal static class CutoutCombatSmoke
         Expect(!arena.SawBellyUpAlive, "对战里有活鱼肚皮朝上。");
         Expect(arena.SawWave, "脊柱没有弯出身体的波。");
         Expect(arena.FlashStarts >= 1 && arena.SawBrightFlash, $"没有看到受击闪白（{arena.FlashStarts}）。");
+        ExpectTailScaleVaries(arena);
         ExpectFade(arena);
 
         AssertShared(arena);
@@ -112,6 +113,27 @@ internal static class CutoutCombatSmoke
             GD.PushError(ex.ToString());
             host.GetTree()?.Quit(1);
         }
+    }
+
+    private static void ExpectTailScaleVaries(FishArena arena)
+    {
+        var fish = arena.Fish[1];
+        var root = fish.Rig.Root.Scale;
+        fish.Rig.SetSpineSineEnabled(true);
+        var min = float.PositiveInfinity;
+        var max = float.NegativeInfinity;
+        var step = 1.0 / OpenOceanFish.SineFrequency / 8.0;
+        for (var i = 0; i < 8; i++)
+        {
+            arena.App.TickFrame(step);
+            var scale = fish.Rig.GetBone(OpenOceanFish.BoneTail).Scale.X;
+            min = Mathf.Min(min, scale);
+            max = Mathf.Max(max, scale);
+        }
+
+        Expect(max - min > 0.2f, $"对战里尾鳍 Scale.X 只在 {min} 到 {max} 之间。");
+        Expect(Mathf.IsEqualApprox(fish.Rig.GetBone(OpenOceanFish.BoneTail).Scale.Y, 1f), "对战里尾鳍的 Y 缩放变了。");
+        Expect(fish.Rig.Root.Scale.IsEqualApprox(root), "对战里的缩短改了根缩放。");
     }
 
     private static void ExpectFade(FishArena arena)

@@ -16,6 +16,7 @@ public sealed class CutoutRig
     private readonly Dictionary<string, Bone2D> _bones;
     private readonly Dictionary<string, string> _paths;
     private readonly Dictionary<string, float> _restRotation;
+    private readonly Dictionary<string, Vector2> _restScale;
     private readonly Dictionary<string, CanvasItem> _slots;
     private readonly AnimationLibrary _library;
     private readonly SpineSineDefinition? _sine;
@@ -41,6 +42,9 @@ public sealed class CutoutRig
         _bones = bones;
         _paths = paths;
         _restRotation = restRotation;
+        _restScale = new Dictionary<string, Vector2>(bones.Count);
+        foreach (var (name, bone) in bones)
+            _restScale[name] = bone.Scale;
         _slots = slots;
         _sine = sine;
         _sineEnabled = sine != null;
@@ -319,11 +323,13 @@ public sealed class CutoutRig
     {
         if (enabled && _sine == null)
             throw new InvalidOperationException("这个骨架没有正弦驱动。");
+        if (!enabled && _sineEnabled)
+            RestoreSineScale();
         _sineEnabled = enabled;
     }
 
     /// <summary>
-    /// 推进正弦并写到指定骨骼的旋转。会再推迟到本帧空闲写一次，
+    /// 推进正弦并写到指定骨骼的旋转，以及可选的局部 Scale.X。会再推迟到本帧空闲写一次，
     /// 以便落在 <see cref="Skeleton2D"/> 和 <see cref="AnimationPlayer"/> 的处理之后。
     /// 只覆盖正弦名单里的骨骼。
     /// 单套骨架自己推迟一次。<see cref="CutoutSkeletonModule"/> 的 <c>Tick</c> 不走这里的推迟，
@@ -375,9 +381,32 @@ public sealed class CutoutRig
             var bone = _bones[name];
             if (!GodotObject.IsInstanceValid(bone))
                 continue;
+            var phase = (time * _sine.FrequencyHz * Mathf.Tau) + (i * _sine.PhaseStepRadians);
             var amplitudeScale = _sine.AmplitudeScales == null ? 1f : _sine.AmplitudeScales[i];
-            var wave = _sine.AmplitudeRadians * amplitudeScale * Mathf.Sin((time * _sine.FrequencyHz * Mathf.Tau) + (i * _sine.PhaseStepRadians));
-            bone.Rotation = _restRotation[name] + wave;
+            if (amplitudeScale != 0f)
+            {
+                var wave = _sine.AmplitudeRadians * amplitudeScale * Mathf.Sin(phase);
+                bone.Rotation = _restRotation[name] + wave;
+            }
+
+            if (_sine.ScaleXAmplitudes == null)
+                continue;
+            var squeeze = 0.5f + (0.5f * Mathf.Sin(phase));
+            var rest = _restScale[name];
+            bone.Scale = new Vector2(rest.X * (1f - (_sine.ScaleXAmplitudes[i] * squeeze)), rest.Y);
+        }
+    }
+
+    private void RestoreSineScale()
+    {
+        if (_sine?.ScaleXAmplitudes == null)
+            return;
+        for (var i = 0; i < _sine.BoneNames.Count; i++)
+        {
+            var name = _sine.BoneNames[i];
+            var bone = _bones[name];
+            if (GodotObject.IsInstanceValid(bone))
+                bone.Scale = _restScale[name];
         }
     }
 
@@ -436,6 +465,8 @@ public sealed class CutoutRig
             throw new ArgumentException("正弦参数无效。", nameof(definition));
         if (sine.AmplitudeScales != null && sine.AmplitudeScales.Count != sine.BoneNames.Count)
             throw new ArgumentException("正弦振幅系数必须和骨骼一样多。", nameof(definition));
+        if (sine.ScaleXAmplitudes != null && sine.ScaleXAmplitudes.Count != sine.BoneNames.Count)
+            throw new ArgumentException("正弦缩短系数必须和骨骼一样多。", nameof(definition));
 
         var waved = new HashSet<string>(sine.BoneNames.Count);
         foreach (var name in sine.BoneNames)
@@ -446,12 +477,21 @@ public sealed class CutoutRig
                 throw new ArgumentException($"正弦骨骼重复：{name}。", nameof(definition));
         }
 
-        if (sine.AmplitudeScales == null)
-            return;
-        foreach (var scale in sine.AmplitudeScales)
+        if (sine.AmplitudeScales != null)
         {
-            if (!float.IsFinite(scale))
-                throw new ArgumentException("正弦振幅系数无效。", nameof(definition));
+            foreach (var scale in sine.AmplitudeScales)
+            {
+                if (!float.IsFinite(scale))
+                    throw new ArgumentException("正弦振幅系数无效。", nameof(definition));
+            }
+        }
+
+        if (sine.ScaleXAmplitudes == null)
+            return;
+        foreach (var amplitude in sine.ScaleXAmplitudes)
+        {
+            if (!float.IsFinite(amplitude) || amplitude >= 1f)
+                throw new ArgumentException("正弦缩短系数必须是有限数，并且小于 1。", nameof(definition));
         }
     }
 

@@ -22,7 +22,7 @@ internal static class OpenOceanFish
     public const double TailSwipeLength = 0.48;
     public const double RecoilLength = 0.28;
     public const float DisplayScale = 2f;
-    public const float SineAmplitude = 0.24f;
+    public const float SineAmplitude = 0.05f;
     public const float SineFrequency = 1.35f;
     public const float SinePhaseStep = 0.72f;
 
@@ -52,11 +52,16 @@ internal static class OpenOceanFish
         BoneSpineFront,
         BoneSpineMid,
         BoneSpineTail,
-        BoneTail
+        BoneTail,
+        BoneDorsal,
+        BonePectoral
     ];
 
-    /// <summary>和 <see cref="SineBones"/> 对齐。头是 0，跟着脊柱前段；越靠尾越大。</summary>
-    public static readonly float[] SineAmplitudeScales = [0f, 0.7f, 1.05f, 1.45f, 1.9f];
+    /// <summary>和 <see cref="SineBones"/> 对齐。头和鳍是 0，旋转留给片段；脊柱越靠尾越大，但整体很小。</summary>
+    public static readonly float[] SineAmplitudeScales = [0f, 0.7f, 1.05f, 1.45f, 1.9f, 0f, 0f];
+
+    /// <summary>和 <see cref="SineBones"/> 对齐。尾鳍收到约 0.35，尾段少一些，鳍是很小的反向。</summary>
+    public static readonly float[] SineScaleX = [0f, 0.05f, 0.12f, 0.28f, 0.65f, -0.07f, -0.07f];
 
     public static readonly string[] SlotIds =
     [
@@ -104,7 +109,8 @@ internal static class OpenOceanFish
             AmplitudeRadians = SineAmplitude,
             FrequencyHz = sineFrequencyHz,
             PhaseStepRadians = SinePhaseStep,
-            AmplitudeScales = SineAmplitudeScales
+            AmplitudeScales = SineAmplitudeScales,
+            ScaleXAmplitudes = SineScaleX
         }
     };
 

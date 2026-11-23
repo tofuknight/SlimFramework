@@ -65,7 +65,7 @@
 
 ### CutoutSkeleton
 
-`Register` 不要求已经 `Add` 的服务。取用是 `Get<CutoutSkeletonModule>()`。`Attach` 用调用方给的骨骼表和槽位表建 Godot 内置 `Skeleton2D` / `Bone2D`。槽位要么是挂在一根骨头上的 `Sprite2D`，要么是骨架上的蒙皮 `Polygon2D`（`CutoutSkinDefinition`，骨头路径相对骨架，权重和顶点对齐）。`SetSlotTexture` 两种都只改贴图。片段在同一台 `AnimationPlayer` 上，不按贴图复制。`SpineSine` 可选：调用方点名哪些骨骼，每帧把它们的旋转写成静息角加正弦；`AmplitudeScales` 与名单等长，用来让振幅沿链变化或反向。不改骨骼层级，也不改贴图。`Tick` 里每套骨架先立刻写一次，再把本帧还在摆动的骨架合成一次空闲补写，避免每套各排一个 `CallDeferred`。直接调用 `Advance` 的单套骨架仍自己推迟一次。`SetUniformScale` 写根节点缩放的绝对值，保留已经有的 Y 符号。插件里没有物种、基因或玩法表。
+`Register` 不要求已经 `Add` 的服务。取用是 `Get<CutoutSkeletonModule>()`。`Attach` 用调用方给的骨骼表和槽位表建 Godot 内置 `Skeleton2D` / `Bone2D`。槽位要么是挂在一根骨头上的 `Sprite2D`，要么是骨架上的蒙皮 `Polygon2D`（`CutoutSkinDefinition`，骨头路径相对骨架，权重和顶点对齐）。`SetSlotTexture` 两种都只改贴图。片段在同一台 `AnimationPlayer` 上，不按贴图复制。`SpineSine` 可选：调用方点名哪些骨骼，每帧把它们的旋转写成静息角加正弦；`AmplitudeScales` 与名单等长，用来让振幅沿链变化或反向，系数为 0 的骨头不写旋转。`ScaleXAmplitudes` 可选，只改这些骨头的局部 `Scale.X`（从静息收到 `1 - 振幅`），不写根节点，关掉正弦时恢复。不改骨骼层级，也不改贴图。`Tick` 里每套骨架先立刻写一次，再把本帧还在摆动的骨架合成一次空闲补写，避免每套各排一个 `CallDeferred`。直接调用 `Advance` 的单套骨架仍自己推迟一次。`SetUniformScale` 写根节点缩放的绝对值，保留已经有的 Y 符号。插件里没有物种、基因或玩法表。
 
 ## 怎么验证
 

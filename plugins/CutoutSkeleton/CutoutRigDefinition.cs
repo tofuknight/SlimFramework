@@ -59,7 +59,8 @@ public sealed class CutoutSkinBone
 
 /// <summary>
 /// 可选正弦。调用方列出要摆动的骨骼（通常是脊柱链），插件不假定物种或部位。
-/// 这些骨骼每帧会被写成「静息旋转 + 正弦」，不要再给它们加旋转轨道。
+/// 这些骨骼每帧会被写成「静息旋转 + 正弦」。旋转系数为 0 的骨头不写旋转，片段可以继续驱动它。
+/// 可选的 <see cref="ScaleXAmplitudes"/> 只改骨头局部 <c>Scale.X</c>，不碰根节点。
 /// </summary>
 public sealed class SpineSineDefinition
 {
@@ -74,9 +75,16 @@ public sealed class SpineSineDefinition
 
     /// <summary>
     /// 与 <see cref="BoneNames"/> 等长的振幅系数。空则每根都是 1。
-    /// 沿链增大就是行波越到末端越大。负值是反向摆。
+    /// 沿链增大就是行波越到末端越大。负值是反向摆。0 表示不写这根骨头的旋转。
     /// </summary>
     public IReadOnlyList<float>? AmplitudeScales { get; init; }
+
+    /// <summary>
+    /// 与 <see cref="BoneNames"/> 等长的局部 X 缩短量。空则不改缩放。
+    /// 每个周期把局部 <c>Scale.X</c> 从静息收到 <c>静息 × (1 - 振幅)</c>。
+    /// 0.65 就是大约 1 → 0.35 → 1。负值反向，略微拉宽。必须小于 1。
+    /// </summary>
+    public IReadOnlyList<float>? ScaleXAmplitudes { get; init; }
 }
 
 /// <summary>建骨架用的数据。骨骼、槽位、片段名都由调用方决定。</summary>

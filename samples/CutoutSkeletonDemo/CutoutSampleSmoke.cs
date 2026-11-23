@@ -96,6 +96,7 @@ internal static class CutoutSampleSmoke
         const double waveTime = 0.18d;
         app.TickFrame(waveTime);
         ExpectTravellingWave(rig, waveTime);
+        ExpectTailScaleVaries(rig, app, waveTime);
         Expect(Mathf.Abs(rig.GetBone(OpenOceanFish.BoneJaw).Rotation - parked[OpenOceanFish.BoneJaw]) < 0.02f, "正弦改到了下颌。");
         ExpectSameRests(rests, rig, "正弦改了骨骼静息。");
 
@@ -121,7 +122,8 @@ internal static class CutoutSampleSmoke
             Expect(rig.Skeleton.GetBoneCount() == rig.BoneCount, "一帧之后骨骼数量变了。");
             Expect(rig.Root.Scale.IsEqualApprox(new Vector2(OpenOceanFish.DisplayScale, OpenOceanFish.DisplayScale)), "一帧之后根缩放变了。");
             foreach (var name in rig.BoneNames)
-                Expect(rig.GetBone(name).Scale.IsEqualApprox(Vector2.One), $"一帧之后骨骼 {name} 出现了局部缩放。");
+                Expect(Mathf.IsEqualApprox(rig.GetBone(name).Scale.Y, 1f), $"一帧之后骨骼 {name} 的 Y 缩放变了。");
+            Expect(rig.GetBone(OpenOceanFish.BoneHead).Scale.IsEqualApprox(Vector2.One), "头的局部缩放被正弦改了。");
             Expect(SineMoved(rig, parked), "正弦没有留在脊柱上。");
             Expect(Mathf.Abs(rig.GetBone(OpenOceanFish.BoneJaw).Rotation - parked[OpenOceanFish.BoneJaw]) < 0.05f, "游动片段改到了下颌。");
             Expect(rig.CurrentClip == OpenOceanFish.SwimClip, $"一帧后片段是 {rig.CurrentClip}，应当仍是游动。");
@@ -170,6 +172,44 @@ internal static class CutoutSampleSmoke
 
         Expect(Mathf.Abs(tail) > Mathf.Abs(front) + 0.05f, "尾巴的振幅没有比身体前段大。");
         Expect(Mathf.Abs(head) < 0.02f, "头没有跟着脊柱前段。");
+    }
+
+    private static void ExpectTailScaleVaries(CutoutRig rig, SlimApp app, double time)
+    {
+        var root = rig.Root.Scale;
+        var first = TailScaleX(rig, time);
+        var half = 0.5d / OpenOceanFish.SineFrequency;
+        app.TickFrame(half);
+        var second = TailScaleX(rig, time + half);
+        Expect(Mathf.Abs(first - second) > 0.2f, $"尾鳍局部 Scale.X 从 {first} 到 {second}，没有缩短。");
+        Expect(Mathf.Min(first, second) < 0.5f, "尾鳍没有收到一半以下。");
+        Expect(Mathf.Max(first, second) > 0.9f, "尾鳍没有回到接近 1。");
+        var squeezed = first < second ? time : time + half;
+        var tailIndex = Array.IndexOf(OpenOceanFish.SineBones, OpenOceanFish.BoneTail);
+        var spineIndex = Array.IndexOf(OpenOceanFish.SineBones, OpenOceanFish.BoneSpineTail);
+        Expect(ExpectedScaleX(spineIndex, squeezed) > ExpectedScaleX(tailIndex, squeezed), "尾段缩短得不该比尾鳍多。");
+        Expect(rig.Root.Scale.IsEqualApprox(root), "缩短改了根缩放。");
+        foreach (var name in rig.BoneNames)
+            Expect(Mathf.IsEqualApprox(rig.GetBone(name).Scale.Y, 1f), $"骨骼 {name} 的 Y 缩放被正弦改了。");
+        rig.SetSpineSineEnabled(false);
+        Expect(rig.GetBone(OpenOceanFish.BoneTail).Scale.IsEqualApprox(Vector2.One), "关掉正弦后尾鳍还缩着。");
+        rig.SetSpineSineEnabled(true);
+    }
+
+    private static float TailScaleX(CutoutRig rig, double time)
+    {
+        var index = Array.IndexOf(OpenOceanFish.SineBones, OpenOceanFish.BoneTail);
+        var expected = ExpectedScaleX(index, time);
+        var actual = rig.GetBone(OpenOceanFish.BoneTail).Scale.X;
+        Expect(Mathf.Abs(actual - expected) < 0.02f, $"尾鳍 Scale.X 是 {actual}，应当接近 {expected}。");
+        return actual;
+    }
+
+    private static float ExpectedScaleX(int index, double time)
+    {
+        var phase = ((float)time * OpenOceanFish.SineFrequency * Mathf.Tau) + (index * OpenOceanFish.SinePhaseStep);
+        var squeeze = 0.5f + (0.5f * Mathf.Sin(phase));
+        return 1f - (OpenOceanFish.SineScaleX[index] * squeeze);
     }
 
     private static void ExpectHeadFlush(CutoutRig rig)
@@ -248,7 +288,12 @@ internal static class CutoutSampleSmoke
 
     private static void ExpectRotationTracks(Animation animation)
     {
-        var sine = new HashSet<string>(OpenOceanFish.SineBones);
+        var sine = new HashSet<string>();
+        for (var bone = 0; bone < OpenOceanFish.SineBones.Length; bone++)
+        {
+            if (OpenOceanFish.SineAmplitudeScales[bone] != 0f)
+                sine.Add(OpenOceanFish.SineBones[bone]);
+        }
         Expect(animation.GetTrackCount() > 0, "片段没有轨道。");
         for (var i = 0; i < animation.GetTrackCount(); i++)
         {

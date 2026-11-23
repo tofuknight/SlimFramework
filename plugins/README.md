@@ -10,6 +10,6 @@
 
 钩子在 `GodotUiStack.PagePresented` / `PageDismissed`。没有订阅者时，打开和关闭与未挂插件时相同。
 
-`CutoutSkeleton` 用 Godot 内置 `Skeleton2D` / `Bone2D` 做剪影换装：槽位是 `Sprite2D` 或蒙皮 `Polygon2D`，换装只改贴图，片段在同一台 `AnimationPlayer` 上，可选正弦只写调用方点名的骨骼，并可按骨头给振幅系数。多套骨架时，正弦的空闲补写按帧合并成一次。`SetUniformScale` 保留根节点 Y 的正负。物种和档位留在游戏。`samples/CutoutSkeletonDemo` 是用法样例。`SlimBootstrap.Configure` 不 `Use` 它。
+`CutoutSkeleton` 用 Godot 内置 `Skeleton2D` / `Bone2D` 做剪影换装：槽位是 `Sprite2D` 或蒙皮 `Polygon2D`，换装只改贴图，片段在同一台 `AnimationPlayer` 上，可选正弦只写调用方点名的骨骼，并可按骨头给旋转振幅和局部 `Scale.X` 缩短。多套骨架时，正弦的空闲补写按帧合并成一次。`SetUniformScale` 保留根节点 Y 的正负。物种和档位留在游戏。`samples/CutoutSkeletonDemo` 是用法样例。`SlimBootstrap.Configure` 不 `Use` 它。
 
 硬性边界见 [docs/extension-rules.md](../docs/extension-rules.md)。

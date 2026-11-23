@@ -4,6 +4,8 @@
 原图像素头在右侧，和样例静息朝向 +X 一致，切片时不翻转。
 关节处各留约 2 像素重叠。张嘴会露出的地方用邻近色填上，不留透明洞。
 臀鳍单独成 parts/anal_fin.png，枢轴在肚皮上的鳍根，运行时挂到 SpineTail。
+身体贴图在臀鳍那一块改成肚皮色，不把鳍的像素再画一遍。
+下颌盖住的像素留在头上，填成口腔色。
 胸鳍仍是自己的部件。背鳍、胸鳍、尾鳍都绕自己的根，不把另一段的鳍带在身上。
 
 用法（在仓库根目录）：
@@ -181,10 +183,17 @@ def build_masks(width: int, height: int, rows: list[bytearray]) -> dict[str, lis
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < width and 0 <= ny < height and opaque(rows, nx, ny):
                             grown[name][ny][nx] = True
+    # 下颌张开会离开的像素留在头上，张嘴才不会露出空背景。
+    for y in range(height):
+        for x in range(width):
+            if primary(x, y, rows, width, height) == "Jaw":
+                grown["Head"][y][x] = True
     return grown
 
 
 MOUTH = (24, 44, 52, 255)
+# 肚皮主色。臀鳍从身体贴图里抹掉后用它补上，重叠处不留洞。
+BELLY = (168, 116, 58, 255)
 
 
 def nearest_color(rows: list[bytearray], mask: list[list[bool]], x: int, y: int, width: int, height: int):
@@ -230,9 +239,13 @@ def paint_part(name: str, rows: list[bytearray], mask: list[list[bool]], width: 
             offset = local_x * 4
             if mask[y][x]:
                 color = pixel(rows, x, y)
-                # 头的下沿在闭嘴时被下颌盖住。这里填口腔色，张开才不会穿帮。
-                if name == "Head" and y >= 32 and primary(x, y, rows, width, height) == "Jaw":
+                kind = primary(x, y, rows, width, height)
+                # 头上被下颌盖住的地方填口腔色。下颌一转，这里还在。
+                if name == "Head" and kind == "Jaw":
                     color = MOUTH
+                # 身体蒙皮会扩进臀鳍。这里改成肚皮色，避免尾一摆出现第二片臀鳍。
+                if name == "Body" and kind == "Anal" and y >= 38 and 42 <= x <= 55:
+                    color = BELLY
                 out[local_y][offset : offset + 4] = bytes(color)
     return min_x, min_y, crop_w, crop_h, out
 
@@ -305,7 +318,7 @@ def main() -> None:
         "size": [width, height],
         "facing": "+X",
         "anchor": {"bone": "SpineFront", "image": list(ANCHOR)},
-        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍是独立部件，挂在 SpineTail 上，不跟胸鳍一起转。",
+        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍挂在 SpineTail 上。身体在臀鳍范围内填肚皮色，不重复鳍的像素。下颌底下的像素留在头上，填口腔色。",
         "parts": parts,
         "bones": [{"name": name, "parent": parent, "image": image} for name, parent, image in bones],
         "bodyPolygon": body_polygon(masks["Body"], width, height),

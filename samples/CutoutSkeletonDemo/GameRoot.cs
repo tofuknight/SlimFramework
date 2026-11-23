@@ -18,6 +18,12 @@ public partial class GameRoot : SlimBootstrap
 
     protected override void OnAppReady()
     {
+        if (WantsArgument("--holes"))
+        {
+            _ = SwallowerHoleAudit.Run(this);
+            return;
+        }
+
         if (WantsCombatScene())
         {
             Callable.From(() => GetTree().ChangeSceneToFile(CutoutScenes.Combat)).CallDeferred();
@@ -29,11 +35,13 @@ public partial class GameRoot : SlimBootstrap
         _demo.Start();
     }
 
-    private static bool WantsCombatScene()
+    private static bool WantsCombatScene() => WantsArgument("--combat");
+
+    private static bool WantsArgument(string name)
     {
         foreach (var arg in OS.GetCmdlineUserArgs())
         {
-            if (arg == "--combat")
+            if (arg == name)
                 return true;
         }
 

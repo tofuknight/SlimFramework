@@ -142,10 +142,10 @@ def opaque(rows: list[bytearray], x: int, y: int) -> bool:
 
 
 def is_anal_fin(x: int, y: int, rows: list[bytearray], width: int, height: int) -> bool:
-    """臀鳍本体。前缘在 x=43 附近，不能让尾的下缘规则把它抢走。"""
+    """臀鳍本体，含尖端那两三颗被尾柄规则挡住的轮廓像素。"""
     if not (0 <= x < width and 0 <= y < height) or not opaque(rows, x, y):
         return False
-    # 垂下的那一叶，含原先被标成尾的 x=43、44。
+    # 垂下的那一叶。x<=52 且 y>=41 里，x>=47、y<=42 的肚皮仍算鳍根，颜色在身体里改掉。
     if 41 <= y <= 47 and 43 <= x <= 52:
         return True
     # 叶根上方的前缘。y<=40 且 x>=47 是肚皮，不是鳍。
@@ -153,6 +153,24 @@ def is_anal_fin(x: int, y: int, rows: list[bytearray], width: int, height: int) 
         return True
     if y == 48 and 43 <= x <= 46:
         return True
+    # 尖端在 x=41、42。从鳍叶沿轮廓走过去，不走进尾柄（x<41）。
+    if y < 47 or x < 41 or x > 46:
+        return False
+    seen = {(x, y)}
+    stack = [(x, y)]
+    while stack:
+        cx, cy = stack.pop()
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = cx + dx, cy + dy
+                if (nx, ny) in seen or not (41 <= nx <= 52 and 41 <= ny <= 48):
+                    continue
+                if not opaque(rows, nx, ny):
+                    continue
+                if 43 <= nx <= 52 and 41 <= ny <= 48:
+                    return True
+                seen.add((nx, ny))
+                stack.append((nx, ny))
     return False
 
 
@@ -199,16 +217,15 @@ def build_masks(width: int, height: int, rows: list[bytearray]) -> dict[str, lis
                         nx, ny = x + dx, y + dy
                         if not (0 <= nx < width and 0 <= ny < height) or not opaque(rows, nx, ny):
                             continue
-                        # 臀鳍源像素不扩进别的部件。
-                        if name != "Anal" and is_anal_fin(nx, ny, rows, width, height):
+                        # 尾和胸鳍不收臀鳍源像素。身体要收，画的时候改成肚皮色。
+                        if name in ("Tail", "Pectoral") and is_anal_fin(nx, ny, rows, width, height):
                             continue
                         grown[name][ny][nx] = True
-    # 下颌和胸鳍之间补一行，小角度张开时不露出 1 像素缝。
-    for y in range(1, height):
-        for x in range(78, width):
-            if grown["Pectoral"][y][x] and opaque(rows, x, y - 1) and not grown["Pectoral"][y - 1][x]:
-                if not is_anal_fin(x, y - 1, rows, width, height):
-                    grown["Pectoral"][y - 1][x] = True
+    # 臀鳍贴着肚皮的一圈留在身体蒙皮里，画成肚皮色。底边顶点才不会往上缩，2 倍采样才不会沿边裂开。
+    for y in range(height):
+        for x in range(42, 56):
+            if y <= 42 and is_anal_fin(x, y, rows, width, height):
+                grown["Body"][y][x] = True
     # 下颌张开会离开的像素留在头上，张嘴才不会露出空背景。
     for y in range(height):
         for x in range(width):
@@ -264,13 +281,13 @@ def paint_part(name: str, rows: list[bytearray], mask: list[list[bool]], width: 
             local_y = y - min_y
             offset = local_x * 4
             if mask[y][x]:
-                color = pixel(rows, x, y)
+                color = pixel(rows, x, y) if opaque(rows, x, y) else BELLY
                 kind = primary(x, y, rows, width, height)
                 # 头上被下颌盖住的地方填口腔色。下颌一转，这里还在。
                 if name == "Head" and kind == "Jaw":
                     color = MOUTH
-                # 身体蒙皮会扩进臀鳍。这里改成肚皮色，避免尾一摆出现第二片臀鳍。
-                if name == "Body" and kind == "Anal" and y >= 38 and 42 <= x <= 55:
+                # 身体盖住臀鳍和胸鳍缺口时用肚皮色，不把鳍的颜色再画一遍。
+                if name == "Body" and (kind == "Anal" or not opaque(rows, x, y)):
                     color = BELLY
                 out[local_y][offset : offset + 4] = bytes(color)
     return min_x, min_y, crop_w, crop_h, out
@@ -378,7 +395,7 @@ def main() -> None:
         "size": [width, height],
         "facing": "+X",
         "anchor": {"bone": "SpineFront", "image": list(ANCHOR)},
-        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍源像素只在 anal_fin.png。尾的下缘停在 x<=42。身体重叠处填肚皮色。胸鳍在下颌下多 1 像素。",
+        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍源像素只在 anal_fin.png，含尖端。身体重叠处和胸鳍缺口填肚皮色。",
         "parts": parts,
         "bones": [{"name": name, "parent": parent, "image": image} for name, parent, image in bones],
         "bodyPolygon": body_polygon(masks["Body"], width, height),

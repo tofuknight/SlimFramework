@@ -12,10 +12,11 @@
       32
     ]
   },
-  "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。",
+  "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍是独立部件，挂在 SpineTail 上，不跟胸鳍一起转。",
   "parts": {
     "Tail": {
       "file": "parts/tail.png",
+      "bone": "Tail",
       "crop": [
         10,
         16,
@@ -33,6 +34,7 @@
     },
     "Dorsal": {
       "file": "parts/dorsal.png",
+      "bone": "Dorsal",
       "crop": [
         53,
         5,
@@ -48,12 +50,31 @@
         15
       ]
     },
-    "Pectoral": {
-      "file": "parts/pectoral.png",
+    "Anal": {
+      "file": "parts/anal_fin.png",
+      "bone": "SpineTail",
       "crop": [
         42,
+        38,
+        13,
+        11
+      ],
+      "pivot": [
+        48,
+        40
+      ],
+      "pivotInTexture": [
+        6,
+        2
+      ]
+    },
+    "Pectoral": {
+      "file": "parts/pectoral.png",
+      "bone": "Pectoral",
+      "crop": [
+        50,
         39,
-        45,
+        37,
         17
       ],
       "pivot": [
@@ -61,12 +82,13 @@
         40
       ],
       "pivotInTexture": [
-        22,
+        14,
         1
       ]
     },
     "Jaw": {
       "file": "parts/jaw.png",
+      "bone": "Jaw",
       "crop": [
         82,
         30,
@@ -84,6 +106,7 @@
     },
     "Head": {
       "file": "parts/head.png",
+      "bone": "Head",
       "crop": [
         82,
         19,
@@ -101,6 +124,7 @@
     },
     "Body": {
       "file": "parts/body.png",
+      "bone": "SpineFront",
       "crop": [
         39,
         18,

@@ -148,6 +148,7 @@ internal static class CutoutSampleSmoke
         Expect(slice.Body.GetWidth() > 8, "吞食者的身体没有读到。");
         Expect(slice.Dorsal.GetWidth() > 4, "吞食者的背鳍没有读到。");
         Expect(slice.Pectoral.GetWidth() > 4, "吞食者的胸鳍没有读到。");
+        Expect(slice.Anal.GetWidth() > 4 && slice.Anal.GetWidth() < 30, "吞食者的臀鳍没有从胸鳍里分开。");
         Expect(slice.Tail.GetWidth() > 8, "吞食者的尾鳍没有读到。");
         Expect(slice.BodySkin.Vertices.Length >= 8, "吞食者的身体轮廓太短。");
         var module = app.Get<CutoutSkeletonModule>();
@@ -161,6 +162,11 @@ internal static class CutoutSampleSmoke
             var body = probe.GetSkinnedSlot(OpenOceanFish.SlotBody);
             Expect(body.GetBoneCount() == 4, "吞食者的身体没有绑上脊柱。");
             Expect(body.Texture == slice.Body, "吞食者的身体贴图不是切片。");
+            Expect(probe.SlotIds.Count == OpenOceanFish.SlotIds.Length + 1, "吞食者应当比占位鱼多一个臀鳍槽。");
+            Expect(probe.GetSlotNode(SwallowerFish.SlotAnal).GetParent() == probe.GetBone(OpenOceanFish.BoneSpineTail), "臀鳍没有挂在尾段上。");
+            Expect(probe.GetSlotNode(OpenOceanFish.SlotPectoral).GetParent() == probe.GetBone(OpenOceanFish.BonePectoral), "胸鳍没有留在自己的骨头上。");
+            Expect(probe.GetSlotNode(OpenOceanFish.SlotDorsal).GetParent() == probe.GetBone(OpenOceanFish.BoneDorsal), "背鳍没有留在自己的骨头上。");
+            Expect(probe.GetSlotNode(OpenOceanFish.SlotTail).GetParent() == probe.GetBone(OpenOceanFish.BoneTail), "尾鳍没有留在尾根上。");
         }
         finally
         {

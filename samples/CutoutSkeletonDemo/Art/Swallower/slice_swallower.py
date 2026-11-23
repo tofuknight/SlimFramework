@@ -3,6 +3,8 @@
 
 原图像素头在右侧，和样例静息朝向 +X 一致，切片时不翻转。
 关节处各留约 2 像素重叠。张嘴会露出的地方用邻近色填上，不留透明洞。
+臀鳍单独成 parts/anal_fin.png，枢轴在肚皮上的鳍根，运行时挂到 SpineTail。
+胸鳍仍是自己的部件。背鳍、胸鳍、尾鳍都绕自己的根，不把另一段的鳍带在身上。
 
 用法（在仓库根目录）：
 
@@ -30,10 +32,26 @@ ANCHOR = (80, 32)
 RULES = {
     "Tail": "caudal",
     "Dorsal": "dorsal",
+    "Anal": "anal",
     "Pectoral": "pectoral",
     "Jaw": "jaw",
     "Head": "head",
     "Body": "body",
+}
+
+# 部件挂到哪根已有的骨头上。臀鳍跟着尾段，不另开骨头。
+PART_BONES = {
+    "Head": "Head",
+    "Jaw": "Jaw",
+    "Body": "SpineFront",
+    "Dorsal": "Dorsal",
+    "Pectoral": "Pectoral",
+    "Anal": "SpineTail",
+    "Tail": "Tail",
+}
+
+PART_FILES = {
+    "Anal": "parts/anal_fin.png",
 }
 
 
@@ -128,7 +146,11 @@ def primary(x: int, y: int, rows: list[bytearray], width: int, height: int) -> s
         return "Tail"
     if y <= 19 and 50 <= x <= 84:
         return "Dorsal"
+    # 下缘有三叶。靠近尾柄的那一叶是臀鳍，和后面两叶之间有空隙。
+    # 只切 y<=47、x<=52，避免把腹鳍尖收进臀鳍。
     if y >= 41 and 40 <= x <= 90:
+        if x <= 52 and y <= 47:
+            return "Anal"
         return "Pectoral"
     if x >= 84 and 32 <= y <= 40:
         return "Jaw"
@@ -249,15 +271,18 @@ def main() -> None:
         "Body": list(ANCHOR),
         "Dorsal": [66, 20],
         "Pectoral": [64, 40],
+        # 臀鳍根在肚皮上，和 SpineTail 同一列。
+        "Anal": [48, 40],
         "Tail": [40, 33],
     }
     for name in RULES:
         min_x, min_y, crop_w, crop_h, image = paint_part(name, rows, masks[name], width, height)
-        file_name = f"parts/{name.lower()}.png"
-        write_png(PARTS / f"{name.lower()}.png", crop_w, crop_h, [bytes(row) for row in image])
+        file_name = PART_FILES.get(name, f"parts/{name.lower()}.png")
+        write_png(ROOT / file_name, crop_w, crop_h, [bytes(row) for row in image])
         pivot = pivots[name]
         parts[name] = {
             "file": file_name,
+            "bone": PART_BONES[name],
             "crop": [min_x, min_y, crop_w, crop_h],
             "pivot": pivot,
             "pivotInTexture": [pivot[0] - min_x, pivot[1] - min_y],
@@ -280,7 +305,7 @@ def main() -> None:
         "size": [width, height],
         "facing": "+X",
         "anchor": {"bone": "SpineFront", "image": list(ANCHOR)},
-        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。",
+        "note": "头在图像右侧。切片不翻转。背肌没有单独脊线，Ridge 槽位留空。臀鳍是独立部件，挂在 SpineTail 上，不跟胸鳍一起转。",
         "parts": parts,
         "bones": [{"name": name, "parent": parent, "image": image} for name, parent, image in bones],
         "bodyPolygon": body_polygon(masks["Body"], width, height),

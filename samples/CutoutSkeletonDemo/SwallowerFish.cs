@@ -6,12 +6,15 @@ namespace SlimFramework.CutoutSkeletonDemo;
 /// <summary>
 /// 吞食者。贴图来自切好的像素图，骨骼名和片段与远洋流线型相同。
 /// 背肌没有单独的脊线，Ridge 槽位是一张空贴图。
+/// 臀鳍是多出来的槽位，挂在已有的 SpineTail 上，占位鱼没有这一槽。
 /// </summary>
 internal static class SwallowerFish
 {
     public const string SpeciesName = "Swallower";
 
     public const string DisplayName = "吞食者";
+
+    public const string SlotAnal = "Anal";
 
     public const float DisplayScale = 2f;
 
@@ -30,12 +33,13 @@ internal static class SwallowerFish
             Slots =
             [
                 OpenOceanFish.SkinSlot(OpenOceanFish.SlotBody, -5, slice.Body, slice.BodySkin),
-                OpenOceanFish.Slot(OpenOceanFish.SlotTail, OpenOceanFish.BoneTail, slice.SpritePosition(OpenOceanFish.SlotTail), 1, slice.Tail),
+                OpenOceanFish.Slot(OpenOceanFish.SlotTail, OpenOceanFish.BoneTail, slice.SlotPosition(OpenOceanFish.SlotTail), 1, slice.Tail),
                 OpenOceanFish.Slot(OpenOceanFish.SlotRidge, OpenOceanFish.BoneRidge, Vector2.Zero, 2, slice.Ridge),
-                OpenOceanFish.Slot(OpenOceanFish.SlotPectoral, OpenOceanFish.BonePectoral, slice.SpritePosition(OpenOceanFish.SlotPectoral), 3, slice.Pectoral),
-                OpenOceanFish.Slot(OpenOceanFish.SlotDorsal, OpenOceanFish.BoneDorsal, slice.SpritePosition(OpenOceanFish.SlotDorsal), 4, slice.Dorsal),
-                OpenOceanFish.Slot(OpenOceanFish.SlotHead, OpenOceanFish.BoneHead, slice.SpritePosition(OpenOceanFish.SlotHead), 5, slice.Head),
-                OpenOceanFish.Slot(OpenOceanFish.SlotJaw, OpenOceanFish.BoneJaw, slice.SpritePosition(OpenOceanFish.SlotJaw), 6, slice.Jaw)
+                OpenOceanFish.Slot(OpenOceanFish.SlotPectoral, OpenOceanFish.BonePectoral, slice.SlotPosition(OpenOceanFish.SlotPectoral), 3, slice.Pectoral),
+                OpenOceanFish.Slot(SlotAnal, OpenOceanFish.BoneSpineTail, slice.SlotPosition(SlotAnal), 2, slice.Anal),
+                OpenOceanFish.Slot(OpenOceanFish.SlotDorsal, OpenOceanFish.BoneDorsal, slice.SlotPosition(OpenOceanFish.SlotDorsal), 4, slice.Dorsal),
+                OpenOceanFish.Slot(OpenOceanFish.SlotHead, OpenOceanFish.BoneHead, slice.SlotPosition(OpenOceanFish.SlotHead), 5, slice.Head),
+                OpenOceanFish.Slot(OpenOceanFish.SlotJaw, OpenOceanFish.BoneJaw, slice.SlotPosition(OpenOceanFish.SlotJaw), 6, slice.Jaw)
             ],
             SpineSine = new SpineSineDefinition
             {
@@ -53,30 +57,38 @@ internal static class SwallowerFish
 /// <summary>切片表和贴图。运行时不调用切片脚本。</summary>
 internal sealed class SwallowerSlice
 {
-    private readonly Dictionary<string, Vector2> _spritePositions;
+    private readonly Dictionary<string, Vector2> _centering;
+    private readonly Dictionary<string, Vector2> _pivots;
+    private readonly Dictionary<string, string> _partBones;
     private readonly Dictionary<string, Vector2> _imagePoints;
 
     private SwallowerSlice(
         Dictionary<string, Vector2> imagePoints,
-        Dictionary<string, Vector2> spritePositions,
+        Dictionary<string, Vector2> centering,
+        Dictionary<string, Vector2> pivots,
+        Dictionary<string, string> partBones,
         IReadOnlyList<CutoutBoneDefinition> bones,
         Texture2D head,
         Texture2D jaw,
         Texture2D body,
         Texture2D dorsal,
         Texture2D pectoral,
+        Texture2D anal,
         Texture2D tail,
         Texture2D ridge,
         CutoutSkinDefinition bodySkin)
     {
         _imagePoints = imagePoints;
-        _spritePositions = spritePositions;
+        _centering = centering;
+        _pivots = pivots;
+        _partBones = partBones;
         Bones = bones;
         Head = head;
         Jaw = jaw;
         Body = body;
         Dorsal = dorsal;
         Pectoral = pectoral;
+        Anal = anal;
         Tail = tail;
         Ridge = ridge;
         BodySkin = bodySkin;
@@ -94,13 +106,20 @@ internal sealed class SwallowerSlice
 
     public Texture2D Pectoral { get; }
 
+    public Texture2D Anal { get; }
+
     public Texture2D Tail { get; }
 
     public Texture2D Ridge { get; }
 
     public CutoutSkinDefinition BodySkin { get; }
 
-    public Vector2 SpritePosition(string slot) => _spritePositions[slot];
+    /// <summary>贴图枢轴落到切片表指定的骨头上。骨头不在枢轴上时，再沿骨头平移。</summary>
+    public Vector2 SlotPosition(string part)
+    {
+        var bone = _partBones[part];
+        return _pivots[part] - _imagePoints[bone] + _centering[part];
+    }
 
     public Vector2 ImagePoint(string bone) => _imagePoints[bone];
 
@@ -113,7 +132,9 @@ internal sealed class SwallowerSlice
         var anchor = Point(root["anchor"].AsGodotDictionary()["image"]);
         var parts = root["parts"].AsGodotDictionary();
         var textures = new Dictionary<string, Texture2D>();
-        var spritePositions = new Dictionary<string, Vector2>();
+        var centering = new Dictionary<string, Vector2>();
+        var pivots = new Dictionary<string, Vector2>();
+        var partBones = new Dictionary<string, string>();
         foreach (var key in parts.Keys)
         {
             var name = key.AsString();
@@ -123,7 +144,9 @@ internal sealed class SwallowerSlice
             var pivot = Point(part["pivotInTexture"]);
             var size = texture.GetSize();
             var local = new Vector2(pivot.X + 0.5f, pivot.Y + 0.5f) - (size * 0.5f);
-            spritePositions[name] = -local;
+            centering[name] = -local;
+            pivots[name] = Point(part["pivot"]);
+            partBones[name] = part["bone"].AsString();
         }
 
         var imagePoints = new Dictionary<string, Vector2>();
@@ -161,13 +184,16 @@ internal sealed class SwallowerSlice
         empty.Fill(new Color(0, 0, 0, 0));
         return new SwallowerSlice(
             imagePoints,
-            spritePositions,
+            centering,
+            pivots,
+            partBones,
             bones,
             textures["Head"],
             textures["Jaw"],
             textures["Body"],
             textures["Dorsal"],
             textures["Pectoral"],
+            textures["Anal"],
             textures["Tail"],
             ImageTexture.CreateFromImage(empty),
             Skin(vertices, uv, imagePoints, anchor));

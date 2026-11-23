@@ -88,6 +88,7 @@ internal static class CutoutCombatSmoke
         Expect(!arena.SawBellyUpAlive, "对战里有活鱼肚皮朝上。");
         Expect(arena.SawWave, "脊柱没有弯出身体的波。");
         Expect(arena.FlashStarts >= 1 && arena.SawBrightFlash, $"没有看到受击闪白（{arena.FlashStarts}）。");
+        ExpectFade(arena);
 
         AssertShared(arena);
         Callable.From(() => Finish(arena, host)).CallDeferred();
@@ -111,6 +112,16 @@ internal static class CutoutCombatSmoke
             GD.PushError(ex.ToString());
             host.GetTree()?.Quit(1);
         }
+    }
+
+    private static void ExpectFade(FishArena arena)
+    {
+        var fish = arena.Fish[0];
+        fish.PrepareFadeForSmoke();
+        Expect(fish.Rig.Root.Modulate.A > 0.99f, "倒下前的透明度不是 1。");
+        Expect(FishFlash.Source.Contains("COLOR", StringComparison.Ordinal), "闪白着色器没有乘上 COLOR。");
+        arena.Step(0.5);
+        Expect(fish.Rig.Root.Modulate.A < 0.85f, $"倒下后的透明度是 {fish.Rig.Root.Modulate.A}，没有变淡。");
     }
 
     private static void ProbeFacing(CombatFish fish)

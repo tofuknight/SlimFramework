@@ -91,8 +91,8 @@ internal static class OpenOceanFish
         Slots =
         [
             Slot(SlotTail, BoneTail, new Vector2(-4, 0), 0, parts.Get(SlotTail, fin)),
-            SkinSlot(SlotBody, -5, parts.Get(SlotBody, body)),
-            Slot(SlotRidge, BoneRidge, new Vector2(-4, 0), 2, parts.Get(SlotRidge, body)),
+            SkinSlot(SlotBody, -5, parts.Get(SlotBody, body), OpenOceanBody.CreateSkin()),
+            SkinSlot(SlotRidge, -4, parts.Get(SlotRidge, body), OpenOceanBody.CreateRidgeSkin()),
             Slot(SlotPectoral, BonePectoral, new Vector2(-2, 6), 3, parts.Get(SlotPectoral, fin)),
             Slot(SlotDorsal, BoneDorsal, new Vector2(0, -14), 4, parts.Get(SlotDorsal, fin)),
             Slot(SlotHead, BoneHead, new Vector2(8, 0), 5, parts.Get(SlotHead, mouth)),
@@ -224,12 +224,12 @@ internal static class OpenOceanFish
         Texture = texture
     };
 
-    private static CutoutSlotDefinition SkinSlot(string id, int zIndex, Texture2D texture) => new()
+    private static CutoutSlotDefinition SkinSlot(string id, int zIndex, Texture2D texture, CutoutSkinDefinition skin) => new()
     {
         Id = id,
         ZIndex = zIndex,
         Texture = texture,
-        Skin = OpenOceanBody.CreateSkin()
+        Skin = skin
     };
 }
 

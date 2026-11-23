@@ -56,31 +56,74 @@ internal static class OpenOceanBody
             Uv[i] = Vertices[i] - min;
         TextureWidth = Mathf.CeilToInt(Size.X);
         TextureHeight = Mathf.CeilToInt(Size.Y);
+        RidgeUv = UvFor(RidgeVertices);
+        var ridgeMax = RidgeUv[0];
+        foreach (var point in RidgeUv)
+            ridgeMax = ridgeMax.Max(point);
+        RidgeTextureWidth = Mathf.CeilToInt(ridgeMax.X);
+        RidgeTextureHeight = Mathf.CeilToInt(ridgeMax.Y);
     }
 
-    public static CutoutSkinDefinition CreateSkin()
+    private static Vector2[] UvFor(Vector2[] vertices)
+    {
+        var min = vertices[0];
+        foreach (var vertex in vertices)
+            min = min.Min(vertex);
+        var uv = new Vector2[vertices.Length];
+        for (var i = 0; i < vertices.Length; i++)
+            uv[i] = vertices[i] - min;
+        return uv;
+    }
+
+    public static readonly Vector2[] RidgeVertices =
+    [
+        new(14, -12),
+        new(2, -22),
+        new(-16, -24),
+        new(-36, -20),
+        new(-54, -14),
+        new(-66, -8),
+        new(-66, -2),
+        new(-54, -6),
+        new(-36, -12),
+        new(-16, -16),
+        new(2, -14),
+        new(14, -8)
+    ];
+
+    public static Vector2[] RidgeUv { get; }
+
+    public static int RidgeTextureWidth { get; }
+
+    public static int RidgeTextureHeight { get; }
+
+    public static CutoutSkinDefinition CreateSkin() => SkinAlongSpine(Vertices, Uv);
+
+    public static CutoutSkinDefinition CreateRidgeSkin() => SkinAlongSpine(RidgeVertices, RidgeUv);
+
+    private static CutoutSkinDefinition SkinAlongSpine(Vector2[] vertices, Vector2[] uv)
     {
         var bones = new[]
         {
-            Weights(OpenOceanFish.BoneSpineFront, 0f),
-            Weights(OpenOceanFish.BoneSpineMid, -24f),
-            Weights(OpenOceanFish.BoneSpineTail, -42f),
-            Weights(OpenOceanFish.BoneTail, -58f)
+            Weights(vertices, OpenOceanFish.BoneSpineFront, 0f),
+            Weights(vertices, OpenOceanFish.BoneSpineMid, -24f),
+            Weights(vertices, OpenOceanFish.BoneSpineTail, -42f),
+            Weights(vertices, OpenOceanFish.BoneTail, -58f)
         };
         Normalize(bones);
         return new CutoutSkinDefinition
         {
-            Vertices = Vertices,
-            Uv = Uv,
+            Vertices = vertices,
+            Uv = uv,
             Bones = bones
         };
     }
 
-    private static CutoutSkinBone Weights(string name, float centerX)
+    private static CutoutSkinBone Weights(Vector2[] vertices, string name, float centerX)
     {
-        var weights = new float[Vertices.Length];
+        var weights = new float[vertices.Length];
         for (var i = 0; i < weights.Length; i++)
-            weights[i] = Falloff(Vertices[i].X, centerX);
+            weights[i] = Falloff(vertices[i].X, centerX);
         return new CutoutSkinBone { Name = name, Weights = weights };
     }
 
@@ -93,7 +136,7 @@ internal static class OpenOceanBody
 
     private static void Normalize(CutoutSkinBone[] bones)
     {
-        for (var vertex = 0; vertex < Vertices.Length; vertex++)
+        for (var vertex = 0; vertex < bones[0].Weights.Length; vertex++)
         {
             var sum = 0f;
             foreach (var bone in bones)

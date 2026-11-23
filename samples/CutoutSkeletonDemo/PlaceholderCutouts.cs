@@ -29,12 +29,13 @@ internal static class PlaceholderCutouts
     {
         if (slotId == OpenOceanFish.SlotBody)
             return Body(tier);
+        if (slotId == OpenOceanFish.SlotRidge)
+            return Ridge(tier);
 
         var (image, poly, fill) = slotId switch
         {
             OpenOceanFish.SlotHead => Head(tier),
             OpenOceanFish.SlotJaw => Jaw(tier),
-            OpenOceanFish.SlotRidge => Ridge(tier),
             OpenOceanFish.SlotDorsal => Dorsal(tier),
             OpenOceanFish.SlotPectoral => Pectoral(tier),
             OpenOceanFish.SlotTail => Tail(tier),
@@ -123,21 +124,17 @@ internal static class PlaceholderCutouts
         }));
     }
 
-    private static (Image Image, Vector2[] Poly, Color Fill) Ridge(int tier)
+    private static Image Ridge(int tier)
     {
-        var image = Blank(72, 14);
-        Vector2[] poly = tier switch
-        {
-            0 => [new(2, 7), new(16, 5), new(56, 5), new(70, 7), new(56, 9), new(16, 9)],
-            1 => [new(2, 7), new(14, 4), new(58, 3), new(70, 7), new(58, 11), new(14, 10)],
-            _ => [new(2, 7), new(12, 2), new(60, 1), new(70, 7), new(60, 13), new(12, 12)]
-        };
-        return (image, poly, Rgb(tier switch
+        var image = Blank(OpenOceanBody.RidgeTextureWidth, OpenOceanBody.RidgeTextureHeight);
+        var fill = Rgb(tier switch
         {
             0 => (196, 104, 108),
             1 => (214, 132, 86),
             _ => (232, 184, 84)
-        }));
+        });
+        Paint(image, OpenOceanBody.RidgeUv, fill, stroke: true);
+        return image;
     }
 
     private static (Image Image, Vector2[] Poly, Color Fill) Dorsal(int tier)

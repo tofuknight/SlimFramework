@@ -12,6 +12,8 @@ internal sealed class CombatFish
     private const float AttackRange = 130f;
     private const float AcquireRange = 340f;
     private const float RecoverSeconds = 0.32f;
+    private const float ShoveSpeed = 180f;
+    private const float ShoveDuration = 0.15f;
 
     private enum Mind
     {
@@ -38,6 +40,8 @@ internal sealed class CombatFish
     private bool _mirrored;
     private bool _bellyUp;
     private float _flash;
+    private Vector2 _shoveDir;
+    private float _shoveLeft;
     private readonly ShaderMaterial _flashMaterial;
 
     public CombatFish(CutoutRig rig, int bodyTier, string preferredAttack, float speed)
@@ -96,6 +100,7 @@ internal sealed class CombatFish
     public void Step(double dt, FishArena arena)
     {
         DecayFlash(dt);
+        ApplyShove(dt, arena);
         if (_mind == Mind.KnockedOut)
         {
             Sink(dt, arena);
@@ -124,7 +129,10 @@ internal sealed class CombatFish
         StartFlash();
         var away = Position - from;
         if (away.LengthSquared() > 4f)
-            _velocity += away.Normalized() * 60f;
+        {
+            _shoveDir = away.Normalized();
+            _shoveLeft = ShoveDuration;
+        }
         if (Hp <= 0)
         {
             KnockOut();
@@ -338,6 +346,14 @@ internal sealed class CombatFish
 
     private void Face(float heading) => FishFacing.Apply(Rig, heading, _bellyUp, ref _mirrored);
 
+    internal void PrepareFadeForSmoke()
+    {
+        if (Alive)
+            KnockOut();
+        _fade = 1f;
+        Rig.Root.Modulate = Colors.White;
+    }
+
     private void StartFlash()
     {
         _flash = FishFlash.Duration;
@@ -350,6 +366,17 @@ internal sealed class CombatFish
         if (_flash <= 0f)
             return;
         _flash = Mathf.Max(0f, _flash - (float)dt);
-        _flashMaterial.SetShaderParameter(FishFlash.Parameter, _flash / FishFlash.Duration);
+        var amount = _flash > FishFlash.Fade ? 1f : _flash / FishFlash.Fade;
+        _flashMaterial.SetShaderParameter(FishFlash.Parameter, amount);
+    }
+
+    private void ApplyShove(double dt, FishArena arena)
+    {
+        if (_shoveLeft <= 0f)
+            return;
+        var step = Mathf.Min((float)dt, _shoveLeft);
+        var speed = ShoveSpeed * (_shoveLeft / ShoveDuration);
+        Rig.Root.Position = arena.Clamp(Position + _shoveDir * speed * step);
+        _shoveLeft -= step;
     }
 }

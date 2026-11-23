@@ -16,7 +16,6 @@ internal static class CutoutSampleSmoke
     [
         (OpenOceanFish.SlotJaw, OpenOceanFish.BoneJaw),
         (OpenOceanFish.SlotHead, OpenOceanFish.BoneHead),
-        (OpenOceanFish.SlotRidge, OpenOceanFish.BoneRidge),
         (OpenOceanFish.SlotDorsal, OpenOceanFish.BoneDorsal),
         (OpenOceanFish.SlotPectoral, OpenOceanFish.BonePectoral),
         (OpenOceanFish.SlotTail, OpenOceanFish.BoneTail)
@@ -42,7 +41,8 @@ internal static class CutoutSampleSmoke
         ExpectParent(rig, OpenOceanFish.BoneTail, OpenOceanFish.BoneSpineTail);
         foreach (var (slot, bone) in SlotBones)
             Expect(rig.GetSlot(slot).GetParent() == rig.GetBone(bone), $"槽位 {slot} 没有挂在 {bone} 上。");
-        var skinnedBody = ExpectSkinnedBody(rig);
+        var skinnedBody = ExpectSkinned(rig, OpenOceanFish.SlotBody, OpenOceanBody.Vertices.Length);
+        var skinnedRidge = ExpectSkinned(rig, OpenOceanFish.SlotRidge, OpenOceanBody.RidgeVertices.Length);
 
         var rests = SnapshotRests(rig);
         var swim = rig.GetClip(OpenOceanFish.SwimClip);
@@ -54,9 +54,11 @@ internal static class CutoutSampleSmoke
 
         var marker = Marker();
         var bodyId = skinnedBody.GetInstanceId();
+        var ridgeId = skinnedRidge.GetInstanceId();
         foreach (var slot in OpenOceanFish.SlotIds)
             rig.SetSlotTexture(slot, marker);
         Expect(rig.GetSkinnedSlot(OpenOceanFish.SlotBody).GetInstanceId() == bodyId, "换装换成了另一块身体。");
+        Expect(rig.GetSkinnedSlot(OpenOceanFish.SlotRidge).GetInstanceId() == ridgeId, "换装换成了另一条背脊。");
         ExpectSameRests(rests, rig, "换装改了骨骼静息。");
         Expect(rig.Skeleton.GetBoneCount() == rig.BoneCount, "换装改了骨骼数量。");
         foreach (var (slot, bone) in SlotBones)
@@ -134,16 +136,16 @@ internal static class CutoutSampleSmoke
         }
     }
 
-    private static Polygon2D ExpectSkinnedBody(CutoutRig rig)
+    private static Polygon2D ExpectSkinned(CutoutRig rig, string slot, int vertices)
     {
-        var body = rig.GetSkinnedSlot(OpenOceanFish.SlotBody);
-        Expect(body.GetParent() == rig.Skeleton, "身体没有挂在骨架上。");
-        Expect(body.Polygon.Length == OpenOceanBody.Vertices.Length, "身体顶点数不对。");
-        Expect(body.GetBoneCount() == 4, $"身体绑了 {body.GetBoneCount()} 根骨头。");
-        Expect(body.GetBonePath(0).ToString() == OpenOceanFish.BoneSpineFront, "身体第一根骨头不是脊柱前段。");
-        Expect(body.GetBoneWeights(0).Length == body.Polygon.Length, "身体权重数量不对。");
-        Expect(body.UV.Length == body.Polygon.Length, "身体 UV 数量不对。");
-        return body;
+        var skin = rig.GetSkinnedSlot(slot);
+        Expect(skin.GetParent() == rig.Skeleton, $"{slot} 没有挂在骨架上。");
+        Expect(skin.Polygon.Length == vertices, $"{slot} 顶点数不对。");
+        Expect(skin.GetBoneCount() == 4, $"{slot} 绑了 {skin.GetBoneCount()} 根骨头。");
+        Expect(skin.GetBonePath(0).ToString() == OpenOceanFish.BoneSpineFront, $"{slot} 第一根骨头不是脊柱前段。");
+        Expect(skin.GetBoneWeights(0).Length == skin.Polygon.Length, $"{slot} 权重数量不对。");
+        Expect(skin.UV.Length == skin.Polygon.Length, $"{slot} UV 数量不对。");
+        return skin;
     }
 
     private static void ExpectTravellingWave(CutoutRig rig, double time)

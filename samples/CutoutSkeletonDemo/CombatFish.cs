@@ -12,8 +12,9 @@ internal sealed class CombatFish
     private const float AttackRange = 130f;
     private const float AcquireRange = 340f;
     private const float RecoverSeconds = 0.32f;
-    private const float ShoveSpeed = 180f;
-    private const float ShoveDuration = 0.15f;
+    // 速度线性降到 0，总位移约是峰值乘时长的一半，大约 40 像素。
+    private const float ShoveSpeed = 460f;
+    private const float ShoveDuration = 0.18f;
 
     private enum Mind
     {

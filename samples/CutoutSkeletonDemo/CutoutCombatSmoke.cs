@@ -119,7 +119,9 @@ internal static class CutoutCombatSmoke
         var fish = arena.Fish[0];
         fish.PrepareFadeForSmoke();
         Expect(fish.Rig.Root.Modulate.A > 0.99f, "倒下前的透明度不是 1。");
-        Expect(FishFlash.Source.Contains("COLOR", StringComparison.Ordinal), "闪白着色器没有乘上 COLOR。");
+        Expect(!FishFlash.Source.Contains("TEXTURE", StringComparison.Ordinal), "闪白着色器又采样了 TEXTURE。");
+        Expect(FishFlash.Source.Contains("COLOR.rgb = mix(COLOR.rgb, vec3(1.0), amount)", StringComparison.Ordinal),
+            "闪白没有把 COLOR.rgb 混向白色。");
         arena.Step(0.5);
         Expect(fish.Rig.Root.Modulate.A < 0.85f, $"倒下后的透明度是 {fish.Rig.Root.Modulate.A}，没有变淡。");
     }

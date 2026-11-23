@@ -92,12 +92,12 @@ internal static class PlaceholderCutouts
 
     private static (Image Image, Vector2[] Poly, Color Fill) Head(int tier)
     {
-        var image = Blank(72, 44);
+        var image = Blank(64, 40);
         Vector2[] poly = tier switch
         {
-            0 => [new(4, 22), new(22, 12), new(50, 14), new(66, 22), new(50, 30), new(22, 32)],
-            1 => [new(2, 22), new(18, 8), new(48, 8), new(68, 22), new(48, 34), new(18, 36)],
-            _ => [new(2, 22), new(16, 4), new(44, 6), new(70, 22), new(44, 38), new(16, 40)]
+            0 => [new(2, 10), new(22, 6), new(44, 10), new(60, 20), new(44, 30), new(22, 34), new(2, 30)],
+            1 => [new(2, 8), new(20, 4), new(42, 8), new(62, 20), new(42, 32), new(20, 36), new(2, 32)],
+            _ => [new(2, 6), new(18, 2), new(40, 6), new(62, 20), new(40, 34), new(18, 38), new(2, 34)]
         };
         return (image, poly, Rgb(tier switch
         {
@@ -182,8 +182,8 @@ internal static class PlaceholderCutouts
 
     private static void DrawEye(Image image)
     {
-        FillCircle(image, 50, 18, 4, Rgb((18, 32, 42)));
-        FillCircle(image, 51, 17, 1, Rgb((240, 248, 252)));
+        FillCircle(image, 46, 16, 4, Rgb((18, 32, 42)));
+        FillCircle(image, 47, 15, 1, Rgb((240, 248, 252)));
     }
 
     private static Image Blank(int width, int height)

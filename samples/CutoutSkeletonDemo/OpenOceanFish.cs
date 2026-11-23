@@ -55,8 +55,8 @@ internal static class OpenOceanFish
         BoneTail
     ];
 
-    /// <summary>和 <see cref="SineBones"/> 对齐。头是负的，用来对着身体的波；越靠尾越大。</summary>
-    public static readonly float[] SineAmplitudeScales = [-0.42f, 0.7f, 1.05f, 1.45f, 1.9f];
+    /// <summary>和 <see cref="SineBones"/> 对齐。头是 0，跟着脊柱前段；越靠尾越大。</summary>
+    public static readonly float[] SineAmplitudeScales = [0f, 0.7f, 1.05f, 1.45f, 1.9f];
 
     public static readonly string[] SlotIds =
     [
@@ -79,8 +79,8 @@ internal static class OpenOceanFish
         Bones =
         [
             Bone(BoneSpineFront, null, new Vector2(0, 0), 40f),
-            Bone(BoneHead, BoneSpineFront, new Vector2(42, -1), 28f),
-            Bone(BoneJaw, BoneHead, new Vector2(14, 8), 18f),
+            Bone(BoneHead, BoneSpineFront, new Vector2(18, 0), 28f),
+            Bone(BoneJaw, BoneHead, new Vector2(16, 7), 18f),
             Bone(BoneRidge, BoneSpineFront, new Vector2(-18, -14), 44f),
             Bone(BoneDorsal, BoneSpineFront, new Vector2(-6, -18), 18f),
             Bone(BonePectoral, BoneSpineFront, new Vector2(4, 12), 16f),
@@ -95,8 +95,8 @@ internal static class OpenOceanFish
             SkinSlot(SlotRidge, -4, parts.Get(SlotRidge, body), OpenOceanBody.CreateRidgeSkin()),
             Slot(SlotPectoral, BonePectoral, new Vector2(-2, 6), 3, parts.Get(SlotPectoral, fin)),
             Slot(SlotDorsal, BoneDorsal, new Vector2(0, -14), 4, parts.Get(SlotDorsal, fin)),
-            Slot(SlotHead, BoneHead, new Vector2(8, 0), 5, parts.Get(SlotHead, mouth)),
-            Slot(SlotJaw, BoneJaw, new Vector2(6, 1), 6, parts.Get(SlotJaw, mouth))
+            Slot(SlotHead, BoneHead, new Vector2(24, 0), 5, parts.Get(SlotHead, mouth)),
+            Slot(SlotJaw, BoneJaw, new Vector2(14, 1), 6, parts.Get(SlotJaw, mouth))
         ],
         SpineSine = new SpineSineDefinition
         {

@@ -2,7 +2,10 @@ using Godot;
 
 namespace SlimFramework.CutoutSkeletonDemo;
 
-/// <summary>受击时把槽位颜色混向白色。一条鱼的槽共用一份材质。</summary>
+/// <summary>
+/// 受击时把槽位颜色混向白色。一条鱼的槽共用一份材质。
+/// Godot 4 的 canvas_item 里，fragment 的 COLOR 已经是贴图乘过顶点色。再采样 TEXTURE 会把颜色乘第二次。
+/// </summary>
 internal static class FishFlash
 {
     public const float Hold = 0.06f;
@@ -17,11 +20,8 @@ internal static class FishFlash
         shader_type canvas_item;
         uniform float flash = 0.0;
         void fragment() {
-            vec4 tint = COLOR;
-            vec4 tex = texture(TEXTURE, UV);
             float amount = clamp(flash, 0.0, 1.0);
-            vec3 rgb = mix(tex.rgb, vec3(1.0), amount);
-            COLOR = vec4(rgb * tint.rgb, tex.a * tint.a);
+            COLOR.rgb = mix(COLOR.rgb, vec3(1.0), amount);
         }
         """;
 

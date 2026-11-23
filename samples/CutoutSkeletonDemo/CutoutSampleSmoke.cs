@@ -43,6 +43,7 @@ internal static class CutoutSampleSmoke
             Expect(rig.GetSlot(slot).GetParent() == rig.GetBone(bone), $"槽位 {slot} 没有挂在 {bone} 上。");
         var skinnedBody = ExpectSkinned(rig, OpenOceanFish.SlotBody, OpenOceanBody.Vertices.Length);
         var skinnedRidge = ExpectSkinned(rig, OpenOceanFish.SlotRidge, OpenOceanBody.RidgeVertices.Length);
+        ExpectHeadFlush(rig);
 
         var rests = SnapshotRests(rig);
         var swim = rig.GetClip(OpenOceanFish.SwimClip);
@@ -168,7 +169,70 @@ internal static class CutoutSampleSmoke
         }
 
         Expect(Mathf.Abs(tail) > Mathf.Abs(front) + 0.05f, "尾巴的振幅没有比身体前段大。");
-        Expect(head * front < 0f, "头没有对着身体的波。");
+        Expect(Mathf.Abs(head) < 0.02f, "头没有跟着脊柱前段。");
+    }
+
+    private static void ExpectHeadFlush(CutoutRig rig)
+    {
+        var head = rig.GetSlot(OpenOceanFish.SlotHead);
+        var body = rig.GetSkinnedSlot(OpenOceanFish.SlotBody);
+        var frontX = float.NegativeInfinity;
+        var frontTop = float.PositiveInfinity;
+        var frontBottom = float.NegativeInfinity;
+        foreach (var point in body.Polygon)
+        {
+            if (point.X < frontX - 0.5f)
+                continue;
+            if (point.X > frontX + 0.5f)
+            {
+                frontX = point.X;
+                frontTop = point.Y;
+                frontBottom = point.Y;
+                continue;
+            }
+
+            frontX = Mathf.Max(frontX, point.X);
+            frontTop = Mathf.Min(frontTop, point.Y);
+            frontBottom = Mathf.Max(frontBottom, point.Y);
+        }
+
+        var image = head.Texture.GetImage();
+        var size = image.GetSize();
+        var origin = rig.Skeleton.ToLocal(head.GlobalPosition);
+        var axisX = rig.Skeleton.ToLocal(head.ToGlobal(Vector2.Right)) - origin;
+        var axisY = rig.Skeleton.ToLocal(head.ToGlobal(Vector2.Down)) - origin;
+        var neckX = float.PositiveInfinity;
+        var neckTop = float.PositiveInfinity;
+        var neckBottom = float.NegativeInfinity;
+        for (var y = 0; y < size.Y; y++)
+        {
+            for (var x = 0; x < size.X; x++)
+            {
+                if (image.GetPixel(x, y).A <= 0.1f)
+                    continue;
+                var local = new Vector2(x + 0.5f - (size.X * 0.5f), y + 0.5f - (size.Y * 0.5f));
+                var at = origin + (axisX * local.X) + (axisY * local.Y);
+                if (at.X > neckX + 3f)
+                    continue;
+                if (at.X < neckX - 0.5f)
+                {
+                    neckX = at.X;
+                    neckTop = at.Y;
+                    neckBottom = at.Y;
+                    continue;
+                }
+
+                neckX = Mathf.Min(neckX, at.X);
+                neckTop = Mathf.Min(neckTop, at.Y);
+                neckBottom = Mathf.Max(neckBottom, at.Y);
+            }
+        }
+
+        var overlap = frontX - neckX;
+        Expect(overlap > 1f, $"头的后缘在 {neckX}，没有盖住身体前缘 {frontX}。");
+        Expect(overlap < 14f, $"头插进身体 {overlap} 像素，太深。");
+        Expect(neckTop <= frontTop + 2f && neckBottom >= frontBottom - 2f,
+            $"头的后缘高度 {neckTop}..{neckBottom} 没有盖住身体前缘 {frontTop}..{frontBottom}。");
     }
 
     private static bool SineMoved(CutoutRig rig, Dictionary<string, float> parked)

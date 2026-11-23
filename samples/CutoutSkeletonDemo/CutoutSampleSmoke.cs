@@ -25,6 +25,7 @@ internal static class CutoutSampleSmoke
     {
         app.Get<CutoutSkeletonModule>();
         ExpectSwallower(app, rig, host);
+        ExpectCleaner(app, rig, host);
         Expect(rig.BoneCount == 9, $"骨骼数是 {rig.BoneCount}，应当是 9。");
         Expect(rig.Skeleton.GetBoneCount() == rig.BoneCount, $"Skeleton2D 登记了 {rig.Skeleton.GetBoneCount()} 根骨头。");
         Expect(rig.Skeleton.Name == CutoutRig.SkeletonNodeName, "骨架节点名不对。");
@@ -173,6 +174,82 @@ internal static class CutoutSampleSmoke
             module.Detach(probe);
             probe.Root.Free();
         }
+    }
+
+    private static void ExpectCleaner(SlimApp app, CutoutRig placeholder, Node host)
+    {
+        ExpectSheet(CleanerFish.Game, new Vector2(10f, -3.5f), new Vector2(-6f, 6.5f), jawOutside: false);
+        ExpectSheet(CleanerFish.Closeup, new Vector2(16f, -6.5f), new Vector2(-6f, 10.5f), jawOutside: true);
+        var module = app.Get<CutoutSkeletonModule>();
+        foreach (var slice in new[] { CleanerFish.Game, CleanerFish.Closeup })
+        {
+            var probe = module.Attach(host, CleanerFish.Definition(slice), "CleanerProbe");
+            try
+            {
+                Expect(probe.BoneCount == 9, $"{slice.Id} 骨骼数是 {probe.BoneCount}。");
+                Expect(probe.BonePath(OpenOceanFish.BoneJaw).ToString() == placeholder.BonePath(OpenOceanFish.BoneJaw).ToString(), "清洁鱼的下颌路径和共用片段不一致。");
+                Expect(probe.BonePath(OpenOceanFish.BoneTail).ToString() == placeholder.BonePath(OpenOceanFish.BoneTail).ToString(), "清洁鱼的尾路径和共用片段不一致。");
+                Expect(probe.GetBone(OpenOceanFish.BoneHead).GetParent() == probe.GetBone(OpenOceanFish.BoneSpineFront), "清洁鱼的头没有跟着脊柱前段。");
+                Expect(!HasSlot(probe, OpenOceanFish.SlotRidge), "清洁鱼不该有背肌槽。");
+                Expect(probe.GetSkinnedSlot(OpenOceanFish.SlotBody).GetBoneCount() == 4, "清洁鱼的身体没有绑上脊柱。");
+                Expect(probe.GetSkinnedSlot(OpenOceanFish.SlotBody).Texture == slice.Texture(OpenOceanFish.SlotBody), "清洁鱼的身体贴图不是切片。");
+                Expect(probe.GetSlot(OpenOceanFish.SlotHead).Position.IsEqualApprox(slice.SlotPosition(OpenOceanFish.SlotHead)), "清洁鱼的头没有按源图轴点摆。");
+                Expect(probe.GetSlot(OpenOceanFish.SlotJaw).Position.IsEqualApprox(slice.SlotPosition(OpenOceanFish.SlotJaw)), "清洁鱼的下颌没有按源图轴点摆。");
+                Expect(probe.GetSlotNode(CleanerFish.SlotAnal).GetParent() == probe.GetBone(OpenOceanFish.BoneSpineTail), "清洁鱼的臀鳍没有挂在尾段上。");
+                Expect(probe.GetSlotNode(CleanerFish.SlotFinlet).GetParent() == probe.GetBone(OpenOceanFish.BoneSpineTail), "清洁鱼的小后背鳍没有挂在尾段上。");
+                Expect(probe.GetSlotNode(OpenOceanFish.SlotTail).GetParent() == probe.GetBone(OpenOceanFish.BoneTail), "清洁鱼的尾鳍没有留在尾根上。");
+                var body = probe.GetSkinnedSlot(OpenOceanFish.SlotBody);
+                Expect(body.Polygon[0].IsEqualApprox(slice.PngOrigin(OpenOceanFish.SlotBody) - slice.ImagePoint(OpenOceanFish.BoneSpineFront)), "清洁鱼的身体网格没有从透明边对齐。");
+                Expect(body.UV[0].IsEqualApprox(Vector2.Zero), "清洁鱼的身体 UV 没有从贴图左上角开始。");
+            }
+            finally
+            {
+                module.Detach(probe);
+                probe.Root.Free();
+            }
+        }
+    }
+
+    private static void ExpectSheet(CleanerSlice slice, Vector2 headSlot, Vector2 jawSlot, bool jawOutside)
+    {
+        foreach (var part in new[]
+        {
+            OpenOceanFish.SlotHead,
+            OpenOceanFish.SlotJaw,
+            OpenOceanFish.SlotBody,
+            OpenOceanFish.SlotDorsal,
+            OpenOceanFish.SlotPectoral,
+            OpenOceanFish.SlotTail,
+            CleanerFish.SlotAnal,
+            CleanerFish.SlotFinlet
+        })
+        {
+            var size = slice.Texture(part).GetSize();
+            var crop = slice.CropSize(part);
+            Expect(Mathf.IsEqualApprox(size.X, crop.X + 2f) && Mathf.IsEqualApprox(size.Y, crop.Y + 2f), $"{slice.Id} 的 {part} 裁切高度被改过。");
+        }
+
+        Expect(slice.PngOrigin(OpenOceanFish.SlotTail).X < 0f, $"{slice.Id} 的尾没有留出画布外的透明边。");
+        Expect(slice.PngOrigin(OpenOceanFish.SlotDorsal).Y < 0f, $"{slice.Id} 的背鳍没有留出画布外的透明边。");
+        Expect(slice.SlotPosition(OpenOceanFish.SlotHead).IsEqualApprox(headSlot), $"{slice.Id} 的头槽位是 {slice.SlotPosition(OpenOceanFish.SlotHead)}。");
+        Expect(slice.SlotPosition(OpenOceanFish.SlotJaw).IsEqualApprox(jawSlot), $"{slice.Id} 的下颌槽位是 {slice.SlotPosition(OpenOceanFish.SlotJaw)}。");
+        Expect(slice.JawHingeIsOutsideOpaque == jawOutside, $"{slice.Id} 的下颌轴点不该被收到不透明像素上。");
+        var jaw = slice.Pivot(OpenOceanFish.SlotJaw) - slice.PngOrigin(OpenOceanFish.SlotJaw);
+        var jawImage = slice.Texture(OpenOceanFish.SlotJaw).GetImage();
+        Expect(jawImage != null, "清洁鱼的下颌贴图读不出像素。");
+        if (jawOutside)
+            Expect(jawImage!.GetPixel((int)jaw.X, (int)jaw.Y).A <= 0.1f, "特写下颌轴点被收到了不透明像素上。");
+    }
+
+    private static bool HasSlot(CutoutRig rig, string id)
+    {
+        foreach (var slot in rig.SlotIds)
+        {
+            if (slot == id)
+                return true;
+        }
+
+        return false;
     }
 
     private static Polygon2D ExpectSkinned(CutoutRig rig, string slot, int vertices)

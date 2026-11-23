@@ -1,0 +1,146 @@
+{
+  "id": "98x52",
+  "source": "master-96.png",
+  "sourceSize": [
+    98,
+    52
+  ],
+  "parts": {
+    "Body": {
+      "file": "body.png",
+      "crop": [
+        10,
+        10,
+        57,
+        37
+      ],
+      "pngOrigin": [
+        9,
+        9
+      ],
+      "pivot": [
+        45,
+        28
+      ]
+    },
+    "Tail": {
+      "file": "tail.png",
+      "crop": [
+        0,
+        13,
+        16,
+        35
+      ],
+      "pngOrigin": [
+        -1,
+        12
+      ],
+      "pivot": [
+        16,
+        28
+      ]
+    },
+    "Anal": {
+      "file": "anal.png",
+      "crop": [
+        24,
+        36,
+        15,
+        11
+      ],
+      "pngOrigin": [
+        23,
+        35
+      ],
+      "pivot": [
+        32,
+        38
+      ]
+    },
+    "Pectoral": {
+      "file": "pectoral.png",
+      "crop": [
+        49,
+        34,
+        14,
+        18
+      ],
+      "pngOrigin": [
+        48,
+        33
+      ],
+      "pivot": [
+        60,
+        36
+      ]
+    },
+    "Dorsal": {
+      "file": "dorsal.png",
+      "crop": [
+        39,
+        0,
+        20,
+        15
+      ],
+      "pngOrigin": [
+        38,
+        -1
+      ],
+      "pivot": [
+        50,
+        13
+      ]
+    },
+    "Finlet": {
+      "file": "finlet.png",
+      "crop": [
+        25,
+        20,
+        7,
+        3
+      ],
+      "pngOrigin": [
+        24,
+        19
+      ],
+      "pivot": [
+        31,
+        21
+      ]
+    },
+    "Jaw": {
+      "file": "jaw.png",
+      "crop": [
+        66,
+        33,
+        30,
+        19
+      ],
+      "pngOrigin": [
+        65,
+        32
+      ],
+      "pivot": [
+        87,
+        32
+      ]
+    },
+    "Head": {
+      "file": "head.png",
+      "crop": [
+        66,
+        10,
+        32,
+        31
+      ],
+      "pngOrigin": [
+        65,
+        9
+      ],
+      "pivot": [
+        66,
+        32
+      ]
+    }
+  }
+}

@@ -30,28 +30,43 @@ internal static class CutoutCombatSmoke
         Expect(arena.Fish.Count == FishArena.FishCount, $"鱼的数量是 {arena.Fish.Count}，应当是 {FishArena.FishCount}。");
         Expect(arena.LivingCount == FishArena.FishCount, $"开场存活数是 {arena.LivingCount}。");
         var swallowers = 0;
+        var cleaners = 0;
         foreach (var fish in arena.Fish)
         {
             Expect(fish.Rig.BoneCount == 9, $"骨骼数是 {fish.Rig.BoneCount}。");
             var swallower = fish.Species == SwallowerFish.SpeciesName;
-            Expect(fish.Rig.SlotIds.Count == OpenOceanFish.SlotIds.Length + (swallower ? 1 : 0), "槽位数不对。");
+            var cleaner = fish.Species == CleanerFish.SpeciesName;
+            Expect(fish.Rig.SlotIds.Count == OpenOceanFish.SlotIds.Length + (swallower || cleaner ? 1 : 0), "槽位数不对。");
             var body = fish.Rig.GetSkinnedSlot(OpenOceanFish.SlotBody);
             Expect(body.GetParent() == fish.Rig.Skeleton, "身体没有挂在骨架上。");
             Expect(body.GetBoneCount() == 4, "身体没有绑上脊柱。");
             Expect(FishFacing.IsBellyDown(fish.Rig), "开场就有鱼肚皮朝上。");
+            if (cleaner)
+            {
+                cleaners++;
+                var head = fish.Rig.GetSlotTexture(OpenOceanFish.SlotHead);
+                Expect(head != null && head.GetWidth() == 22, "对战里的清洁鱼不是 60×32 的头。");
+                Expect(Mathf.IsEqualApprox(fish.Rig.Root.Scale.X, CleanerFish.CombatScale), "对战里的清洁鱼不是 2 倍。");
+                Expect(fish.Rig.GetSlotNode(OpenOceanFish.SlotHead).TextureFilter == CanvasItem.TextureFilterEnum.Nearest, "清洁鱼没有用最近邻过滤。");
+                Expect(fish.Rig.GetSlotNode(CleanerFish.SlotAnal).GetParent() == fish.Rig.GetBone(OpenOceanFish.BoneSpineTail), "对战里的清洁鱼臀鳍没有跟着尾段。");
+                Expect(fish.Rig.GetSlotNode(CleanerFish.SlotFinlet).GetParent() == fish.Rig.GetBone(OpenOceanFish.BoneSpineTail), "对战里的小后背鳍没有跟着尾段。");
+                continue;
+            }
+
             if (!swallower)
                 continue;
             swallowers++;
-            var head = fish.Rig.GetSlotTexture(OpenOceanFish.SlotHead);
+            var swallowerHead = fish.Rig.GetSlotTexture(OpenOceanFish.SlotHead);
             var tail = fish.Rig.GetSlotTexture(OpenOceanFish.SlotTail);
-            Expect(head != null && head.GetWidth() > 8, "对战里的吞食者没有头贴图。");
+            Expect(swallowerHead != null && swallowerHead.GetWidth() > 8, "对战里的吞食者没有头贴图。");
             Expect(tail != null && tail.GetWidth() > 8, "对战里的吞食者没有尾贴图。");
             Expect(Mathf.IsEqualApprox(fish.Rig.Root.Scale.X, SwallowerFish.CombatScale), "对战里的吞食者不是整数缩放。");
             Expect(fish.Rig.GetSlotNode(OpenOceanFish.SlotHead).TextureFilter == CanvasItem.TextureFilterEnum.Nearest, "吞食者没有用最近邻过滤。");
             Expect(fish.Rig.GetSlotNode(SwallowerFish.SlotAnal).GetParent() == fish.Rig.GetBone(OpenOceanFish.BoneSpineTail), "对战里的臀鳍没有跟着尾段。");
         }
 
-        Expect(swallowers == FishArena.FishCount / 2, $"吞食者有 {swallowers} 条，应当一半。");
+        Expect(cleaners == FishArena.FishCount / 3, $"清洁鱼有 {cleaners} 条，应当三分之一。");
+        Expect(swallowers == FishArena.FishCount / 3, $"吞食者有 {swallowers} 条，应当三分之一。");
     }
 
     public static void AssertShared(FishArena arena, bool swapSlot = true)

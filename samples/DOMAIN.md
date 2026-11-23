@@ -9,7 +9,7 @@
 | `samples/SlimFramework.Demo/` | `SlimFramework.Demo` | 无头示例。`DemoSession`、`DemoPlugin`（`Id` 为 `demo`）、`Protos/demo_profile.proto`、手写表 `Config/`（命名空间 `cfg`）、`Fixtures/tbitem.bytes` |
 | `samples/SlimFramework.Demo.Runner/` | Runner 工程 | `dotnet run` 入口，跑 `DemoSession` |
 | `samples/DemoGame/` | `SlimFramework.DemoGame` | 最小 Godot 工程。`GameRoot` 先跑 `AdapterSmoke`，再跑 `AssetCatalogSmoke`，然后跑 `DemoSession`。资源清单在 `Assets/resource_refs.json` |
-| `samples/CutoutSkeletonDemo/` | `SlimFramework.CutoutSkeletonDemo` | 剪影换装和对战样例。`GameRoot` 在 `base.Configure` 之后 `Use` `CutoutSkeletonPlugin`。鱼的骨骼、三档口 / 体 / 鳍、吞食者像素切片、共用片段和对战规则留在这里。对战场景是 `Combat.tscn` |
+| `samples/CutoutSkeletonDemo/` | `SlimFramework.CutoutSkeletonDemo` | 剪影换装和对战样例。`GameRoot` 在 `base.Configure` 之后 `Use` `CutoutSkeletonPlugin`。鱼的骨骼、三档口 / 体 / 鳍、清洁鱼正式切片、吞食者像素切片、共用片段和对战规则留在这里。对战场景是 `Combat.tscn` |
 | `samples/EmptyGame/` | 不在 `SlimFramework.sln` | 拷到单独游戏仓库的空壳。不要在本仓库里打开或构建 |
 
 `DemoSession` / `DemoPlugin` 是用法样例，不是第二款游戏。关卡、剧情、正式 UI 皮肤、玩法系统不进 `DemoGame`，也不进 `src/`。

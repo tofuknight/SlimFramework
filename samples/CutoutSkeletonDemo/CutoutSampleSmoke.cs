@@ -178,8 +178,8 @@ internal static class CutoutSampleSmoke
 
     private static void ExpectCleaner(SlimApp app, CutoutRig placeholder, Node host)
     {
-        ExpectSheet(CleanerFish.Game, new Vector2(10f, -3.5f), new Vector2(-6f, 6.5f), jawOutside: false);
-        ExpectSheet(CleanerFish.Closeup, new Vector2(16f, -6.5f), new Vector2(-6f, 10.5f), jawOutside: true);
+        ExpectSheet(CleanerFish.Game, new Vector2(9.65f, -3.5f), new Vector2(-6.35f, 6.5f), jawOutside: false);
+        ExpectSheet(CleanerFish.Closeup, new Vector2(15.65f, -6.5f), new Vector2(-6.35f, 10.5f), jawOutside: true);
         var module = app.Get<CutoutSkeletonModule>();
         foreach (var slice in new[] { CleanerFish.Game, CleanerFish.Closeup })
         {
@@ -201,6 +201,7 @@ internal static class CutoutSampleSmoke
                 var body = probe.GetSkinnedSlot(OpenOceanFish.SlotBody);
                 Expect(body.Polygon[0].IsEqualApprox(slice.PngOrigin(OpenOceanFish.SlotBody) - slice.ImagePoint(OpenOceanFish.BoneSpineFront)), "清洁鱼的身体网格没有从透明边对齐。");
                 Expect(body.UV[0].IsEqualApprox(Vector2.Zero), "清洁鱼的身体 UV 没有从贴图左上角开始。");
+                ExpectLockedBands(slice, body);
             }
             finally
             {
@@ -208,6 +209,50 @@ internal static class CutoutSampleSmoke
                 probe.Root.Free();
             }
         }
+    }
+
+    private static void ExpectLockedBands(CleanerSlice slice, Polygon2D body)
+    {
+        var neck = slice.Pivot(OpenOceanFish.SlotHead).X - 4f;
+        var finletMin = slice.PngOrigin(CleanerFish.SlotFinlet).X - 2f;
+        var finletMax = slice.PngOrigin(CleanerFish.SlotFinlet).X + slice.Texture(CleanerFish.SlotFinlet).GetWidth() + 2f;
+        var anchorX = slice.ImagePoint(OpenOceanFish.BoneSpineFront).X;
+        var frontIndex = BoneIndex(body, OpenOceanFish.BoneSpineFront);
+        var midIndex = BoneIndex(body, OpenOceanFish.BoneSpineMid);
+        var tailIndex = BoneIndex(body, OpenOceanFish.BoneSpineTail);
+        var front = body.GetBoneWeights(frontIndex);
+        var mid = body.GetBoneWeights(midIndex);
+        var spineTail = body.GetBoneWeights(tailIndex);
+        var sawNeck = false;
+        var sawFinlet = false;
+        for (var vertex = 0; vertex < body.Polygon.Length; vertex++)
+        {
+            var sourceX = body.Polygon[vertex].X + anchorX;
+            if (sourceX >= neck - 0.01f)
+            {
+                sawNeck = true;
+                Expect(front[vertex] > 0.99f && mid[vertex] < 0.01f, $"{slice.Id} 的鳃线没有整段绑在脊柱前段上。");
+            }
+            else if (sourceX >= finletMin - 0.01f && sourceX <= finletMax + 0.01f)
+            {
+                sawFinlet = true;
+                Expect(spineTail[vertex] > 0.99f, $"{slice.Id} 的小后背鳍那一段没有整段绑在尾段上。");
+            }
+        }
+
+        Expect(sawNeck && sawFinlet, $"{slice.Id} 的身体网格没有盖住鳃线和小后背鳍。");
+    }
+
+    private static int BoneIndex(Polygon2D body, string bone)
+    {
+        for (var index = 0; index < body.GetBoneCount(); index++)
+        {
+            var path = body.GetBonePath(index).ToString();
+            if (path == bone || path.EndsWith("/" + bone, StringComparison.Ordinal))
+                return index;
+        }
+
+        throw new InvalidOperationException($"清洁鱼的身体没有绑上 {bone}。");
     }
 
     private static void ExpectSheet(CleanerSlice slice, Vector2 headSlot, Vector2 jawSlot, bool jawOutside)

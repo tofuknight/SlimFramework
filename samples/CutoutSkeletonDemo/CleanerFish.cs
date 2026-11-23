@@ -105,6 +105,9 @@ internal sealed class CleanerSlice
 
     public CutoutSkinDefinition BodySkin { get; }
 
+    /// <summary>不到半个源像素。4 倍采样的中心仍落在原来的纹素上，最近邻却不再在接缝处露出底。</summary>
+    private const float OverlapTexels = 0.35f;
+
     /// <summary>98×52 的下颌轴点落在归头部的口裂上，下颌贴图这一格是透明的。不能收到不透明包围盒上。</summary>
     public bool JawHingeIsOutsideOpaque { get; }
 
@@ -118,12 +121,18 @@ internal sealed class CleanerSlice
 
     public Vector2 ImagePoint(string bone) => _imagePoints[bone];
 
-    /// <summary>居中精灵的局部位置。源像素 S 的左上角落到骨架上的 S。</summary>
+    /// <summary>
+    /// 居中精灵的局部位置。源像素 S 的左上角落到骨架上的 S。
+    /// 头和下颌再向身体重叠不到半个像素，摆动时最近邻才不会在鳃线空出一列。
+    /// </summary>
     public Vector2 SlotPosition(string part)
     {
         var bone = _partBones[part];
         var size = _textures[part].GetSize();
-        return _pngOrigin[part] - _imagePoints[bone] + (size * 0.5f);
+        var position = _pngOrigin[part] - _imagePoints[bone] + (size * 0.5f);
+        if (part == OpenOceanFish.SlotHead || part == OpenOceanFish.SlotJaw)
+            position.X -= OverlapTexels;
+        return position;
     }
 
     public static CleanerSlice Load(string directory)
@@ -212,7 +221,15 @@ internal sealed class CleanerSlice
             imagePoints,
             textures,
             bones,
-            Skin(bodyWidth, bodyHeight, pngOrigin[OpenOceanFish.SlotBody], bodyPivot, imagePoints),
+            Skin(
+                bodyWidth,
+                bodyHeight,
+                pngOrigin[OpenOceanFish.SlotBody],
+                bodyPivot,
+                imagePoints,
+                pivot[OpenOceanFish.SlotHead].X - 4f,
+                pngOrigin[CleanerFish.SlotFinlet].X - 2f,
+                pngOrigin[CleanerFish.SlotFinlet].X + textures[CleanerFish.SlotFinlet].GetWidth() + 2f),
             jawOutside);
     }
 
@@ -239,13 +256,18 @@ internal sealed class CleanerSlice
     /// <summary>
     /// 身体用整张贴图的矩形，沿 X 加密顶点。断开的补色像素也在这张图里。
     /// 透明边不显形。静息时顶点落在源图格子上，和居中精灵同一套坐标。
+    /// 鳃线往后几像素整段绑在脊柱前段上，和刚性的头一起动，避免 60×32 在最近邻下空出一列。
+    /// 小后背鳍那一段整段绑在尾段上，和挂在同一根骨头上的鳍一起动。
     /// </summary>
     private static CutoutSkinDefinition Skin(
         int width,
         int height,
         Vector2 pngOrigin,
         Vector2 anchor,
-        Dictionary<string, Vector2> imagePoints)
+        Dictionary<string, Vector2> imagePoints,
+        float neckLockSourceX,
+        float finletLockMinX,
+        float finletLockMaxX)
     {
         var xs = new List<int>();
         for (var x = 0; x <= width; x += 2)
@@ -281,27 +303,48 @@ internal sealed class CleanerSlice
         var radius = Mathf.Max(12f, width * 0.45f);
         var bones = new CutoutSkinBone[names.Length];
         for (var bone = 0; bone < names.Length; bone++)
-        {
-            var center = imagePoints[names[bone]].X - anchor.X;
-            var weights = new float[count];
-            for (var vertex = 0; vertex < count; vertex++)
-                weights[vertex] = Falloff(vertices[vertex].X, center, radius);
-            bones[bone] = new CutoutSkinBone { Name = names[bone], Weights = weights };
-        }
+            bones[bone] = new CutoutSkinBone { Name = names[bone], Weights = new float[count] };
 
         for (var vertex = 0; vertex < count; vertex++)
         {
+            var sourceX = vertices[vertex].X + anchor.X;
+            if (sourceX >= neckLockSourceX)
+            {
+                bones[0].Weights[vertex] = 1f;
+                continue;
+            }
+
+            if (sourceX >= finletLockMinX && sourceX <= finletLockMaxX)
+            {
+                bones[2].Weights[vertex] = 1f;
+                continue;
+            }
+
             var sum = 0f;
-            foreach (var bone in bones)
-                sum += bone.Weights[vertex];
+            for (var bone = 0; bone < names.Length; bone++)
+            {
+                var center = imagePoints[names[bone]].X - anchor.X;
+                var weight = Falloff(vertices[vertex].X, center, radius);
+                bones[bone].Weights[vertex] = weight;
+                sum += weight;
+            }
+
             if (sum <= 0.0001f)
             {
                 bones[0].Weights[vertex] = 1f;
                 continue;
             }
 
-            foreach (var bone in bones)
-                bone.Weights[vertex] /= sum;
+            for (var bone = 0; bone < names.Length; bone++)
+                bones[bone].Weights[vertex] /= sum;
+        }
+
+        // 小后背鳍那一段再往金鳍盖住不到半个像素。尾段一压，最近邻才不会在鳍和身体之间空出一格。
+        for (var vertex = 0; vertex < count; vertex++)
+        {
+            var sourceX = vertices[vertex].X + anchor.X;
+            if (sourceX >= finletLockMinX && sourceX <= finletLockMaxX)
+                vertices[vertex] += new Vector2(-OverlapTexels, -OverlapTexels);
         }
 
         return new CutoutSkinDefinition
